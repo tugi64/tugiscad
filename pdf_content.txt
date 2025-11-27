@@ -1,0 +1,32 @@
+﻿Total pages: 398
+
+================================================================================
+
+--- Page 1 ---
+
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                         NETCAD 
+
+================================================================================
+
+--- Page 2 ---
+
+Error reading PDF: 'charmap' codec can't encode character '\uf8e9' in position 531: character maps to <undefined>
