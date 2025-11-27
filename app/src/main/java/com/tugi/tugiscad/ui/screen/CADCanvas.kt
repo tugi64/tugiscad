@@ -17,6 +17,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.tugi.tugiscad.data.model.*
 import com.tugi.tugiscad.ui.viewmodel.CADViewModel
+import com.tugi.tugiscad.ui.viewmodel.DrawingTool
+import com.tugi.tugiscad.ui.drawing.DrawingHelper
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -33,22 +35,51 @@ fun CADCanvas(
     val panX by viewModel.panOffsetX
     val panY by viewModel.panOffsetY
     val showGrid by viewModel.showGrid
+    val activeTool by viewModel.activeTool
+
+    // Çizim için geçici state'ler
+    var drawingStartPoint by remember { mutableStateOf<Offset?>(null) }
+    var drawingPoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
+    var currentMousePosition by remember { mutableStateOf<Offset?>(null) }
 
     Canvas(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(Unit) {
+            .pointerInput(activeTool) {
                 detectTapGestures { offset ->
-                    // Tıklama olaylarını işle
-                    handleCanvasTap(offset, viewModel)
+                    handleCanvasTap(
+                        offset = offset,
+                        viewModel = viewModel,
+                        onStartPoint = { drawingStartPoint = it },
+                        onAddPoint = { drawingPoints = drawingPoints + it },
+                        onFinishDrawing = {
+                            // Çizimi tamamla
+                            finishDrawing(
+                                viewModel = viewModel,
+                                startPoint = drawingStartPoint,
+                                points = drawingPoints,
+                                currentPoint = offset
+                            )
+                            drawingStartPoint = null
+                            drawingPoints = emptyList()
+                        }
+                    )
                 }
             }
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    // Pan (kaydırma) işlemi
-                    viewModel.pan(dragAmount.x, dragAmount.y)
+                    when (activeTool) {
+                        DrawingTool.SELECT -> {
+                            // Pan (kaydırma) işlemi
+                            viewModel.pan(dragAmount.x, dragAmount.y)
+                        }
+                        else -> {
+                            // Diğer araçlar için fare pozisyonunu güncelle
+                            currentMousePosition = change.position
+                        }
+                    }
                 }
             }
     ) {
@@ -71,6 +102,62 @@ fun CADCanvas(
                 is CADObject.Hatch -> drawHatch(obj, zoom, panX, panY)
                 is CADObject.Symbol -> drawSymbol(obj, zoom, panX, panY)
             }
+        }
+
+        // Çizim önizlemesi
+        drawingStartPoint?.let { start ->
+            currentMousePosition?.let { current ->
+                when (activeTool) {
+                    DrawingTool.LINE -> {
+                        drawLine(
+                            color = Color.Yellow.copy(alpha = 0.7f),
+                            start = start,
+                            end = current,
+                            strokeWidth = 2f
+                        )
+                    }
+                    DrawingTool.RECTANGLE -> {
+                        val width = current.x - start.x
+                        val height = current.y - start.y
+                        drawRect(
+                            color = Color.Yellow.copy(alpha = 0.7f),
+                            topLeft = start,
+                            size = androidx.compose.ui.geometry.Size(width, height),
+                            style = Stroke(width = 2f)
+                        )
+                    }
+                    DrawingTool.CIRCLE -> {
+                        val radius = kotlin.math.sqrt(
+                            ((current.x - start.x) * (current.x - start.x) +
+                            (current.y - start.y) * (current.y - start.y)).toDouble()
+                        ).toFloat()
+                        drawCircle(
+                            color = Color.Yellow.copy(alpha = 0.7f),
+                            radius = radius,
+                            center = start,
+                            style = Stroke(width = 2f)
+                        )
+                    }
+                    else -> {}
+                }
+            }
+        }
+
+        // Polyline önizlemesi
+        if (drawingPoints.isNotEmpty() && activeTool == DrawingTool.POLYLINE) {
+            val path = Path()
+            path.moveTo(drawingPoints.first().x, drawingPoints.first().y)
+            drawingPoints.drop(1).forEach { point ->
+                path.lineTo(point.x, point.y)
+            }
+            currentMousePosition?.let {
+                path.lineTo(it.x, it.y)
+            }
+            drawPath(
+                path = path,
+                color = Color.Yellow.copy(alpha = 0.7f),
+                style = Stroke(width = 2f)
+            )
         }
     }
 }
@@ -306,7 +393,105 @@ private fun DrawScope.drawSymbol(symbol: CADObject.Symbol, zoom: Float, panX: Fl
 /**
  * Canvas tıklama olayını işle
  */
-private fun handleCanvasTap(offset: Offset, viewModel: CADViewModel) {
-    // TODO: Obje seçimi ve araç bazlı işlemler
+private fun handleCanvasTap(
+    offset: Offset,
+    viewModel: CADViewModel,
+    onStartPoint: (Offset) -> Unit,
+    onAddPoint: (Offset) -> Unit,
+    onFinishDrawing: () -> Unit
+) {
+    when (viewModel.activeTool.value) {
+        DrawingTool.LINE, DrawingTool.RECTANGLE, DrawingTool.CIRCLE -> {
+            onStartPoint(offset)
+        }
+        DrawingTool.POINT -> {
+            // Nokta oluştur ve hemen ekle
+            viewModel.activeLayer.value?.let { layer ->
+                val point = DrawingHelper.createPoint(
+                    position = offset,
+                    layer = layer,
+                    lineType = viewModel.activeLineType.value,
+                    color = viewModel.activeColor.value
+                )
+                viewModel.addObject(point)
+            }
+        }
+        DrawingTool.POLYLINE -> {
+            onAddPoint(offset)
+        }
+        DrawingTool.SELECT -> {
+            // Obje seçimi
+            // TODO: Implement object selection
+        }
+        else -> {}
+    }
+}
+
+/**
+ * Çizimi tamamla
+ */
+private fun finishDrawing(
+    viewModel: CADViewModel,
+    startPoint: Offset?,
+    points: List<Offset>,
+    currentPoint: Offset
+) {
+    viewModel.activeLayer.value?.let { layer ->
+        val lineType = viewModel.activeLineType.value
+        val color = viewModel.activeColor.value
+
+        when (viewModel.activeTool.value) {
+            DrawingTool.LINE -> {
+                startPoint?.let { start ->
+                    val line = DrawingHelper.createLine(
+                        start = start,
+                        end = currentPoint,
+                        layer = layer,
+                        lineType = lineType,
+                        color = color
+                    )
+                    viewModel.addObject(line)
+                }
+            }
+            DrawingTool.RECTANGLE -> {
+                startPoint?.let { start ->
+                    val rectangle = DrawingHelper.createRectangle(
+                        topLeft = start,
+                        bottomRight = currentPoint,
+                        layer = layer,
+                        lineType = lineType,
+                        color = color
+                    )
+                    viewModel.addObject(rectangle)
+                }
+            }
+            DrawingTool.CIRCLE -> {
+                startPoint?.let { start ->
+                    val radius = DrawingHelper.calculateDistance(start, currentPoint)
+                    val circle = DrawingHelper.createCircle(
+                        center = start,
+                        radius = radius,
+                        layer = layer,
+                        lineType = lineType,
+                        color = color
+                    )
+                    viewModel.addObject(circle)
+                }
+            }
+            DrawingTool.POLYLINE -> {
+                if (points.size >= 2) {
+                    val polyline = DrawingHelper.createPolyline(
+                        points = points,
+                        isClosed = false,
+                        layer = layer,
+                        lineType = lineType,
+                        color = color
+                    )
+                    viewModel.addObject(polyline)
+                }
+            }
+            else -> {}
+        }
+    }
 }
 

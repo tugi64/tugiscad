@@ -102,31 +102,55 @@ private fun CADDropdownMenu(
 }
 
 @Composable
-private fun ProjectMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
+private fun ProjectMenuItems(
+    viewModel: CADViewModel,
+    onDismiss: () -> Unit,
+    onNewProject: () -> Unit,
+    onProjectProperties: () -> Unit,
+    onSaveProject: () -> Unit,
+    onOpenProject: () -> Unit
+) {
     DropdownMenuItem(
         text = { Text("Yeni Proje") },
         onClick = {
-            viewModel.createNewProject("Yeni Proje")
+            onNewProject()
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.Add, null) }
     )
     DropdownMenuItem(
         text = { Text("Aç") },
-        onClick = { onDismiss() },
+        onClick = {
+            onOpenProject()
+            onDismiss()
+        },
         leadingIcon = { Icon(Icons.Default.FolderOpen, null) }
     )
     DropdownMenuItem(
         text = { Text("Kaydet") },
-        onClick = { onDismiss() },
+        onClick = {
+            onSaveProject()
+            onDismiss()
+        },
         leadingIcon = { Icon(Icons.Default.Save, null) }
     )
     DropdownMenuItem(
         text = { Text("Farklı Kaydet") },
-        onClick = { onDismiss() },
+        onClick = {
+            onSaveProject()
+            onDismiss()
+        },
         leadingIcon = { Icon(Icons.Default.SaveAs, null) }
     )
     HorizontalDivider()
+    DropdownMenuItem(
+        text = { Text("Proje Özellikleri") },
+        onClick = {
+            onProjectProperties()
+            onDismiss()
+        },
+        leadingIcon = { Icon(Icons.Default.Settings, null) }
+    )
     DropdownMenuItem(
         text = { Text("Yazdır") },
         onClick = { onDismiss() },

@@ -55,14 +55,16 @@ class CADViewModel : ViewModel() {
 
     init {
         // Varsayılan proje oluştur
-        createNewProject("Yeni Proje")
+        createNewProject("Yeni Proje", 1000.0, MeasureUnit.METER)
     }
 
-    // Yeni proje oluştur
-    fun createNewProject(name: String) {
+    // Yeni proje oluştur - gelişmiş
+    fun createNewProject(name: String, scale: Double = 1000.0, unit: MeasureUnit = MeasureUnit.METER) {
         val project = CADProject(
             id = UUID.randomUUID().toString(),
             name = name,
+            scale = scale,
+            unit = unit,
             layers = mutableListOf(
                 Layer(
                     id = "layer_0",
@@ -75,6 +77,13 @@ class CADViewModel : ViewModel() {
         )
         currentProject.value = project
         activeLayer.value = project.layers.first()
+        selectedObjects.clear()
+        resetView()
+    }
+
+    // Proje güncelle
+    fun updateProject(project: CADProject) {
+        currentProject.value = project
     }
 
     // Proje yükle
