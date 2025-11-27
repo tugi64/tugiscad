@@ -1,6 +1,33 @@
 # 🔧 TugisCAD Kurulum Rehberi
 
-## ⚠️ Yeşil RUN Butonu Yanmıyorsa
+## ⚠️ Yeşil RUN Butonu Yanmıyorsa veya File Menüsünde "Sync Project" Görünmüyorsa
+
+### 🚨 ÖNCE BU ADIMI DENEYİN:
+
+#### Projeyi Kapat ve Yeniden Aç
+1. Android Studio'yu **tamamen kapatın** (File → Close Project)
+2. Android Studio ana ekranına dönün
+3. **Open** butonuna tıklayın
+4. `C:\Users\CASPER\AndroidStudioProjects\tugiscad` klasörünü seçin
+5. **OK** tıklayın
+6. Proje açılırken **Gradle sync otomatik başlayacak** ✅
+7. 2-5 dakika bekleyin (ilk sync uzun sürer)
+
+#### Build.gradle Dosyasını Açın
+Eğer yukarıdaki adım çalışmazsa:
+1. Sol panelde **build.gradle (Project: TugisCAD)** dosyasını açın
+2. Dosyayı açtığınızda üstte **sarı banner** görünecek
+3. Banner'da **"Sync Now"** linkine tıklayın
+4. Gradle sync başlayacak
+
+#### Manuel Sync (File menüsünde çıkmıyorsa)
+1. Android Studio **toolbar**'a bakın (üst kısım)
+2. **🐘 fil ikonu** (Gradle elephant) yanında **"Sync"** butonu olmalı
+3. Yoksa: **Ctrl+Shift+A** basın → "Sync" yazın → **"Sync Project with Gradle Files"** seçin
+
+---
+
+## 📋 Normal Kurulum Adımları
 
 Eğer Android Studio'da yeşil RUN butonu yanmıyorsa, aşağıdaki adımları takip edin:
 
@@ -20,14 +47,25 @@ Eğer Android Studio'da yeşil RUN butonu yanmıyorsa, aşağıdaki adımları t
    - En az **Android 14 (API 34)** yükleyin
    - **Android SDK Build-Tools 34** yükleyin
 
-### 3️⃣ Gradle Wrapper'ı Yeniden Oluşturun
-Eğer hala sorun devam ediyorsa:
+### 3️⃣ Gradle Wrapper'ı Düzelt
+Eğer hala sorun devam ediyorsa, Gradle wrapper eksik olabilir:
 
-```bash
-# Terminal'de (Android Studio içinde)
+#### Otomatik Çözüm (Önerilen):
+1. Projeyi **kapat** (File → Close Project)
+2. Android Studio ana ekranında **Import Project** seçin
+3. Aynı projeyi seçin: `C:\Users\CASPER\AndroidStudioProjects\tugiscad`
+4. **Import from Gradle** seçin
+5. Android Studio gradle wrapper'ı otomatik indirecek
+
+#### Manuel Çözüm:
+PowerShell veya Terminal'de:
+```powershell
 cd C:\Users\CASPER\AndroidStudioProjects\tugiscad
-gradle wrapper --gradle-version 8.2
+# Gradle wrapper jar'ı manuel indir
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gradle/gradle/master/gradle/wrapper/gradle-wrapper.jar" -OutFile "gradle\wrapper\gradle-wrapper.jar"
 ```
+
+Sonra Android Studio'da projeyi yeniden açın.
 
 ### 4️⃣ Cache Temizle ve Yeniden Başlat
 1. Menü → **File → Invalidate Caches**
