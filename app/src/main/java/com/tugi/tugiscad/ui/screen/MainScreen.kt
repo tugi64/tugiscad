@@ -36,14 +36,6 @@ fun MainScreen(
                             // Diğer menü işlemleri
                         }
                     }
-                },
-                onNewProject = { showNewProjectDialog = true },
-                onProjectProperties = { showProjectPropertiesDialog = true },
-                onSaveProject = {
-                    // TODO: Proje kaydetme implementasyonu
-                },
-                onOpenProject = {
-                    // TODO: Proje açma implementasyonu
                 }
             )
         },

@@ -104,16 +104,12 @@ private fun CADDropdownMenu(
 @Composable
 private fun ProjectMenuItems(
     viewModel: CADViewModel,
-    onDismiss: () -> Unit,
-    onNewProject: () -> Unit,
-    onProjectProperties: () -> Unit,
-    onSaveProject: () -> Unit,
-    onOpenProject: () -> Unit
+    onDismiss: () -> Unit
 ) {
     DropdownMenuItem(
         text = { Text("Yeni Proje") },
         onClick = {
-            onNewProject()
+            // TODO: New project
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.Add, null) }
@@ -121,7 +117,7 @@ private fun ProjectMenuItems(
     DropdownMenuItem(
         text = { Text("Aç") },
         onClick = {
-            onOpenProject()
+            // TODO: Open project
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.FolderOpen, null) }
@@ -129,7 +125,7 @@ private fun ProjectMenuItems(
     DropdownMenuItem(
         text = { Text("Kaydet") },
         onClick = {
-            onSaveProject()
+            // TODO: Save project
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.Save, null) }
@@ -137,16 +133,16 @@ private fun ProjectMenuItems(
     DropdownMenuItem(
         text = { Text("Farklı Kaydet") },
         onClick = {
-            onSaveProject()
+            // TODO: Save as
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.SaveAs, null) }
     )
-    HorizontalDivider()
+    Divider()
     DropdownMenuItem(
         text = { Text("Proje Özellikleri") },
         onClick = {
-            onProjectProperties()
+            // TODO: Project properties
             onDismiss()
         },
         leadingIcon = { Icon(Icons.Default.Settings, null) }
@@ -235,7 +231,7 @@ private fun EditMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
         },
         leadingIcon = { Icon(Icons.Default.Delete, null) }
     )
-    HorizontalDivider()
+    Divider()
     DropdownMenuItem(
         text = { Text("Taşı") },
         onClick = {
@@ -271,7 +267,7 @@ private fun EditMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
             onDismiss()
         }
     )
-    HorizontalDivider()
+    Divider()
     DropdownMenuItem(
         text = { Text("Kes/Kırp") },
         onClick = {
@@ -321,7 +317,7 @@ private fun ViewMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
         },
         leadingIcon = { Icon(Icons.Default.FitScreen, null) }
     )
-    HorizontalDivider()
+    Divider()
     DropdownMenuItem(
         text = { Text(if (viewModel.showGrid.value) "Grid Gizle" else "Grid Göster") },
         onClick = {
