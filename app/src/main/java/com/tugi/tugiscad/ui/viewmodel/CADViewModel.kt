@@ -1,9 +1,12 @@
 package com.tugi.tugiscad.ui.viewmodel
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import com.tugi.tugiscad.data.model.CADObject
 import com.tugi.tugiscad.data.model.CADProject
 import com.tugi.tugiscad.data.model.Layer
+import com.tugi.tugiscad.data.model.LineType
 
 enum class DrawingTool {
     SELECT, LINE, POLYLINE, CIRCLE, RECTANGLE, ARC, POINT, TEXT, ELLIPSE, HATCH, SYMBOL,
@@ -19,6 +22,12 @@ class CADViewModel : ViewModel() {
     val activeLayer = mutableStateOf<Layer?>(null)
     val activeTool = mutableStateOf(DrawingTool.SELECT)
     val showGrid = mutableStateOf(true)
+    val snapMode = mutableStateOf(SnapMode.NONE)
+    val zoomLevel = mutableStateOf(1.0)
+    val panOffsetX = mutableStateOf(0f)
+    val panOffsetY = mutableStateOf(0f)
+    val activeLineType = mutableStateOf(LineType.CONTINUOUS)
+    val activeColor = mutableStateOf(Color.Black)
 
     fun addLayer(layer: Layer) {
         currentProject.value?.layers?.add(layer)
@@ -32,24 +41,39 @@ class CADViewModel : ViewModel() {
         activeTool.value = tool
     }
 
+    fun addObject(obj: CADObject) {
+        currentProject.value?.objects?.add(obj)
+    }
+
+    fun pan(deltaX: Float, deltaY: Float) {
+        panOffsetX.value += deltaX
+        panOffsetY.value += deltaY
+    }
+
     fun deleteSelectedObjects() {
         // TODO: Implement delete selected objects
     }
 
     fun zoomIn() {
-        // TODO: Implement zoom in
+        zoomLevel.value *= 1.2
     }
 
     fun zoomOut() {
-        // TODO: Implement zoom out
+        zoomLevel.value /= 1.2
     }
 
     fun resetView() {
-        // TODO: Implement reset view
+        zoomLevel.value = 1.0
+        panOffsetX.value = 0f
+        panOffsetY.value = 0f
     }
 
     fun toggleGrid() {
         showGrid.value = !showGrid.value
+    }
+
+    fun setSnapMode(mode: SnapMode) {
+        snapMode.value = mode
     }
 
     fun createNewProject(name: String, scale: Double, unit: com.tugi.tugiscad.data.model.MeasureUnit) {

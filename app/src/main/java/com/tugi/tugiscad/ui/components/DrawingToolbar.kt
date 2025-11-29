@@ -8,12 +8,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.tugi.tugiscad.ui.viewmodel.CADViewModel
 import com.tugi.tugiscad.ui.viewmodel.DrawingTool
 import com.tugi.tugiscad.ui.viewmodel.SnapMode
+import java.util.Locale
 
 /**
  * Çizim Araçları Toolbar - Sol tarafta yer alır
@@ -41,7 +41,7 @@ fun DrawingToolbar(
             onClick = { viewModel.setActiveTool(DrawingTool.SELECT) }
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Divider(modifier = Modifier.padding(vertical = 4.dp))
 
         // Çizgi
         ToolButton(
@@ -99,7 +99,7 @@ fun DrawingToolbar(
             onClick = { viewModel.setActiveTool(DrawingTool.TEXT) }
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Divider(modifier = Modifier.padding(vertical = 4.dp))
 
         // Taşı
         ToolButton(
@@ -191,7 +191,7 @@ fun BottomToolbar(
 
             // Zoom seviyesi
             Text(
-                text = "Zoom: ${String.format("%.1f", viewModel.zoomLevel.value * 100)}%",
+                text = "Zoom: ${String.format(Locale.US, "%.1f", viewModel.zoomLevel.value * 100)}%",
                 style = MaterialTheme.typography.bodySmall
             )
         }
@@ -236,7 +236,7 @@ private fun ToolButton(
 
 @Composable
 private fun SnapModeToggle(viewModel: CADViewModel) {
-    var expanded = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val expanded = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Box {
         IconButton(onClick = { expanded.value = true }) {
@@ -254,7 +254,7 @@ private fun SnapModeToggle(viewModel: CADViewModel) {
             expanded = expanded.value,
             onDismissRequest = { expanded.value = false }
         ) {
-            SnapMode.values().forEach { mode ->
+            SnapMode.entries.forEach { mode ->
                 DropdownMenuItem(
                     text = { Text(mode.name) },
                     onClick = {

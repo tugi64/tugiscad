@@ -165,8 +165,8 @@ fun CADCanvas(
 /**
  * Grid çizimi
  */
-private fun DrawScope.drawGrid(zoom: Float, panX: Float, panY: Float) {
-    val gridSpacing = 50f * zoom
+private fun DrawScope.drawGrid(zoom: Double, panX: Float, panY: Float) {
+    val gridSpacing = (50f * zoom).toFloat()
     val width = size.width
     val height = size.height
 
@@ -198,9 +198,9 @@ private fun DrawScope.drawGrid(zoom: Float, panX: Float, panY: Float) {
 /**
  * Nokta çizimi
  */
-private fun DrawScope.drawPoint(point: CADObject.Point, zoom: Float, panX: Float, panY: Float) {
-    val screenX = point.x.toFloat() * zoom + panX
-    val screenY = point.y.toFloat() * zoom + panY
+private fun DrawScope.drawPoint(point: CADObject.Point, zoom: Double, panX: Float, panY: Float) {
+    val screenX = (point.x * zoom).toFloat() + panX
+    val screenY = (point.y * zoom).toFloat() + panY
 
     drawCircle(
         color = point.color,
@@ -212,14 +212,14 @@ private fun DrawScope.drawPoint(point: CADObject.Point, zoom: Float, panX: Float
 /**
  * Çizgi çizimi
  */
-private fun DrawScope.drawLine(line: CADObject.Line, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawLine(line: CADObject.Line, zoom: Double, panX: Float, panY: Float) {
     val start = Offset(
-        line.startPoint.x.toFloat() * zoom + panX,
-        line.startPoint.y.toFloat() * zoom + panY
+        (line.startPoint.x * zoom).toFloat() + panX,
+        (line.startPoint.y * zoom).toFloat() + panY
     )
     val end = Offset(
-        line.endPoint.x.toFloat() * zoom + panX,
-        line.endPoint.y.toFloat() * zoom + panY
+        (line.endPoint.x * zoom).toFloat() + panX,
+        (line.endPoint.y * zoom).toFloat() + panY
     )
 
     val pathEffect = if (line.lineType.pattern.isNotEmpty()) {
@@ -238,20 +238,20 @@ private fun DrawScope.drawLine(line: CADObject.Line, zoom: Float, panX: Float, p
 /**
  * Çoklu çizgi çizimi
  */
-private fun DrawScope.drawPolyline(polyline: CADObject.Polyline, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawPolyline(polyline: CADObject.Polyline, zoom: Double, panX: Float, panY: Float) {
     if (polyline.points.size < 2) return
 
     val path = Path()
     val firstPoint = polyline.points.first()
     path.moveTo(
-        firstPoint.x.toFloat() * zoom + panX,
-        firstPoint.y.toFloat() * zoom + panY
+        (firstPoint.x * zoom).toFloat() + panX,
+        (firstPoint.y * zoom).toFloat() + panY
     )
 
     polyline.points.drop(1).forEach { point ->
         path.lineTo(
-            point.x.toFloat() * zoom + panX,
-            point.y.toFloat() * zoom + panY
+            (point.x * zoom).toFloat() + panX,
+            (point.y * zoom).toFloat() + panY
         )
     }
 
@@ -273,10 +273,10 @@ private fun DrawScope.drawPolyline(polyline: CADObject.Polyline, zoom: Float, pa
 /**
  * Daire çizimi
  */
-private fun DrawScope.drawCircle(circle: CADObject.Circle, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawCircle(circle: CADObject.Circle, zoom: Double, panX: Float, panY: Float) {
     val center = Offset(
-        circle.center.x.toFloat() * zoom + panX,
-        circle.center.y.toFloat() * zoom + panY
+        (circle.center.x * zoom).toFloat() + panX,
+        (circle.center.y * zoom).toFloat() + panY
     )
 
     val pathEffect = if (circle.lineType.pattern.isNotEmpty()) {
@@ -285,7 +285,7 @@ private fun DrawScope.drawCircle(circle: CADObject.Circle, zoom: Float, panX: Fl
 
     drawCircle(
         color = circle.color,
-        radius = circle.radius.toFloat() * zoom,
+        radius = (circle.radius * zoom).toFloat(),
         center = center,
         style = Stroke(width = 2f, pathEffect = pathEffect)
     )
@@ -294,12 +294,12 @@ private fun DrawScope.drawCircle(circle: CADObject.Circle, zoom: Float, panX: Fl
 /**
  * Yay çizimi
  */
-private fun DrawScope.drawArc(arc: CADObject.Arc, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawArc(arc: CADObject.Arc, zoom: Double, panX: Float, panY: Float) {
     val center = Offset(
-        arc.center.x.toFloat() * zoom + panX,
-        arc.center.y.toFloat() * zoom + panY
+        (arc.center.x * zoom).toFloat() + panX,
+        (arc.center.y * zoom).toFloat() + panY
     )
-    val radius = arc.radius.toFloat() * zoom
+    val radius = (arc.radius * zoom).toFloat()
 
     val path = Path()
     val sweepAngle = arc.endAngle - arc.startAngle
@@ -325,21 +325,21 @@ private fun DrawScope.drawArc(arc: CADObject.Arc, zoom: Float, panX: Float, panY
 /**
  * Elips çizimi
  */
-private fun DrawScope.drawEllipse(ellipse: CADObject.Ellipse, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawEllipse(ellipse: CADObject.Ellipse, zoom: Double, panX: Float, panY: Float) {
     val center = Offset(
-        ellipse.center.x.toFloat() * zoom + panX,
-        ellipse.center.y.toFloat() * zoom + panY
+        (ellipse.center.x * zoom).toFloat() + panX,
+        (ellipse.center.y * zoom).toFloat() + panY
     )
 
     drawOval(
         color = ellipse.color,
         topLeft = Offset(
-            center.x - ellipse.radiusX.toFloat() * zoom,
-            center.y - ellipse.radiusY.toFloat() * zoom
+            center.x - (ellipse.radiusX * zoom).toFloat(),
+            center.y - (ellipse.radiusY * zoom).toFloat()
         ),
         size = androidx.compose.ui.geometry.Size(
-            ellipse.radiusX.toFloat() * zoom * 2,
-            ellipse.radiusY.toFloat() * zoom * 2
+            (ellipse.radiusX * zoom * 2).toFloat(),
+            (ellipse.radiusY * zoom * 2).toFloat()
         ),
         style = Stroke(width = 2f)
     )
@@ -348,14 +348,14 @@ private fun DrawScope.drawEllipse(ellipse: CADObject.Ellipse, zoom: Float, panX:
 /**
  * Dikdörtgen çizimi
  */
-private fun DrawScope.drawRectangle(rect: CADObject.Rectangle, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawRectangle(rect: CADObject.Rectangle, zoom: Double, panX: Float, panY: Float) {
     val topLeft = Offset(
-        rect.topLeft.x.toFloat() * zoom + panX,
-        rect.topLeft.y.toFloat() * zoom + panY
+        (rect.topLeft.x * zoom).toFloat() + panX,
+        (rect.topLeft.y * zoom).toFloat() + panY
     )
     val bottomRight = Offset(
-        rect.bottomRight.x.toFloat() * zoom + panX,
-        rect.bottomRight.y.toFloat() * zoom + panY
+        (rect.bottomRight.x * zoom).toFloat() + panX,
+        (rect.bottomRight.y * zoom).toFloat() + panY
     )
 
     drawRect(
@@ -372,21 +372,21 @@ private fun DrawScope.drawRectangle(rect: CADObject.Rectangle, zoom: Float, panX
 /**
  * Metin çizimi
  */
-private fun DrawScope.drawText(text: CADObject.Text, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawText(text: CADObject.Text, zoom: Double, panX: Float, panY: Float) {
     // TODO: Metin çizimi için TextPaint kullanılacak
 }
 
 /**
  * Tarama çizimi
  */
-private fun DrawScope.drawHatch(hatch: CADObject.Hatch, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawHatch(hatch: CADObject.Hatch, zoom: Double, panX: Float, panY: Float) {
     // TODO: Tarama deseni çizimi
 }
 
 /**
  * Sembol çizimi
  */
-private fun DrawScope.drawSymbol(symbol: CADObject.Symbol, zoom: Float, panX: Float, panY: Float) {
+private fun DrawScope.drawSymbol(symbol: CADObject.Symbol, zoom: Double, panX: Float, panY: Float) {
     // TODO: Sembol çizimi
 }
 
@@ -488,6 +488,8 @@ private fun finishDrawing(
                         color = color
                     )
                     viewModel.addObject(polyline)
+                } else {
+                    // Polyline için en az 2 nokta gerekir
                 }
             }
             else -> {}

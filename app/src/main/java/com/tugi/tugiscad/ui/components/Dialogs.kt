@@ -7,11 +7,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.tugi.tugiscad.data.model.CADProject
 import com.tugi.tugiscad.data.model.MeasureUnit
-import com.tugi.tugiscad.ui.viewmodel.CADViewModel
 
 /**
  * Proje Özellikleri Dialog
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProjectPropertiesDialog(
     project: CADProject,
@@ -75,7 +75,7 @@ fun ProjectPropertiesDialog(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        MeasureUnit.values().forEach { unit ->
+                        MeasureUnit.entries.forEach { unit ->
                             DropdownMenuItem(
                                 text = { Text(unit.name) },
                                 onClick = {
@@ -115,6 +115,7 @@ fun ProjectPropertiesDialog(
 /**
  * Yeni Proje Dialog
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewProjectDialog(
     onDismiss: () -> Unit,
@@ -166,7 +167,7 @@ fun NewProjectDialog(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        MeasureUnit.values().forEach { unit ->
+                        MeasureUnit.entries.forEach { unit ->
                             DropdownMenuItem(
                                 text = { Text(unit.name) },
                                 onClick = {
@@ -203,6 +204,7 @@ fun NewProjectDialog(
 /**
  * Obje Özellikleri Dialog
  */
+@Suppress("unused")
 @Composable
 fun ObjectPropertiesDialog(
     objectInfo: String,
