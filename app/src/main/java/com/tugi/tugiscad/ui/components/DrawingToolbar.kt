@@ -215,12 +215,14 @@ fun BottomToolbar(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "X: 0.00  Y: 0.00",
-                style = MaterialTheme.typography.bodySmall
+                text = "X: ${String.format(Locale.US, "%.2f", viewModel.currentMouseX.value)}  Y: ${String.format(Locale.US, "%.2f", viewModel.currentMouseY.value)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "Ölçek: ${viewModel.currentProject.value?.scale ?: 1000}",
-                style = MaterialTheme.typography.bodySmall
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 

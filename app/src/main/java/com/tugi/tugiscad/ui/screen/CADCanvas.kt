@@ -83,6 +83,97 @@ fun CADCanvas(
         )
     }
 
+    // Snap fonksiyonu - En yakın nokta/merkez/orta noktayı bul
+    fun snapToPoint(worldPos: Offset, snapMode: com.tugi.tugiscad.ui.viewmodel.SnapMode): Offset {
+        if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.NONE) {
+            return worldPos // Snap kapalıysa direkt pozisyonu döndür
+        }
+
+        val snapRadius = 15.0 / zoom // Piksel cinsinden snap mesafesi
+        var closestPoint: Offset? = null
+        var minDistance = snapRadius
+
+        project?.objects?.forEach { obj ->
+            when (obj) {
+                is CADObject.Point -> {
+                    if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.ENDPOINT) {
+                        val dist = kotlin.math.sqrt(
+                            ((worldPos.x - obj.x) * (worldPos.x - obj.x) +
+                             (worldPos.y - obj.y) * (worldPos.y - obj.y)).toDouble()
+                        )
+                        if (dist < minDistance) {
+                            minDistance = dist
+                            closestPoint = Offset(obj.x.toFloat(), obj.y.toFloat())
+                        }
+                    }
+                }
+                is CADObject.Line -> {
+                    // Endpoint snap - çizginin uç noktaları
+                    if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.ENDPOINT) {
+                        val startDist = kotlin.math.sqrt(
+                            ((worldPos.x - obj.startPoint.x) * (worldPos.x - obj.startPoint.x) +
+                             (worldPos.y - obj.startPoint.y) * (worldPos.y - obj.startPoint.y)).toDouble()
+                        )
+                        if (startDist < minDistance) {
+                            minDistance = startDist
+                            closestPoint = Offset(obj.startPoint.x.toFloat(), obj.startPoint.y.toFloat())
+                        }
+
+                        val endDist = kotlin.math.sqrt(
+                            ((worldPos.x - obj.endPoint.x) * (worldPos.x - obj.endPoint.x) +
+                             (worldPos.y - obj.endPoint.y) * (worldPos.y - obj.endPoint.y)).toDouble()
+                        )
+                        if (endDist < minDistance) {
+                            minDistance = endDist
+                            closestPoint = Offset(obj.endPoint.x.toFloat(), obj.endPoint.y.toFloat())
+                        }
+                    }
+                    // Midpoint snap - çizginin orta noktası
+                    else if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.MIDPOINT) {
+                        val midX = (obj.startPoint.x + obj.endPoint.x) / 2.0
+                        val midY = (obj.startPoint.y + obj.endPoint.y) / 2.0
+                        val midDist = kotlin.math.sqrt(
+                            ((worldPos.x - midX) * (worldPos.x - midX) +
+                             (worldPos.y - midY) * (worldPos.y - midY)).toDouble()
+                        )
+                        if (midDist < minDistance) {
+                            minDistance = midDist
+                            closestPoint = Offset(midX.toFloat(), midY.toFloat())
+                        }
+                    }
+                }
+                is CADObject.Circle -> {
+                    // Center snap - dairenin merkezi
+                    if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.CENTER) {
+                        val centerDist = kotlin.math.sqrt(
+                            ((worldPos.x - obj.center.x) * (worldPos.x - obj.center.x) +
+                             (worldPos.y - obj.center.y) * (worldPos.y - obj.center.y)).toDouble()
+                        )
+                        if (centerDist < minDistance) {
+                            minDistance = centerDist
+                            closestPoint = Offset(obj.center.x.toFloat(), obj.center.y.toFloat())
+                        }
+                    }
+                }
+                is CADObject.Arc -> {
+                    if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.CENTER) {
+                        val centerDist = kotlin.math.sqrt(
+                            ((worldPos.x - obj.center.x) * (worldPos.x - obj.center.x) +
+                             (worldPos.y - obj.center.y) * (worldPos.y - obj.center.y)).toDouble()
+                        )
+                        if (centerDist < minDistance) {
+                            minDistance = centerDist
+                            closestPoint = Offset(obj.center.x.toFloat(), obj.center.y.toFloat())
+                        }
+                    }
+                }
+                else -> {}
+            }
+        }
+
+        return closestPoint ?: worldPos
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
@@ -93,8 +184,13 @@ fun CADCanvas(
                     while (true) {
                         val event = awaitPointerEvent(PointerEventPass.Main)
                         event.changes.firstOrNull()?.let { change ->
+                            val worldPos = screenToWorld(change.position)
+                            // ViewModel'e koordinatları kaydet
+                            viewModel.currentMouseX.value = worldPos.x.toDouble()
+                            viewModel.currentMouseY.value = worldPos.y.toDouble()
+
                             if (drawingStartPoint != null || activeTool == DrawingTool.POLYLINE) {
-                                currentMousePosition = screenToWorld(change.position)
+                                currentMousePosition = worldPos
                             }
                         }
                     }
@@ -104,37 +200,39 @@ fun CADCanvas(
                 // Sol tıklama için tap gesture
                 detectTapGestures { offset ->
                     val worldOffset = screenToWorld(offset)
+                    // Snap uygula
+                    val snappedOffset = snapToPoint(worldOffset, viewModel.snapMode.value)
 
                     when (activeTool) {
                         DrawingTool.LINE -> {
                             if (drawingStartPoint == null) {
                                 // İlk tıklama - başlangıç noktası
-                                drawingStartPoint = worldOffset
-                                println("TugisCAD: LINE - Başlangıç: $worldOffset")
+                                drawingStartPoint = snappedOffset
+                                println("TugisCAD: LINE - Başlangıç: $snappedOffset (Snap: ${viewModel.snapMode.value})")
                             } else {
                                 // Sonraki tıklamalar - çizgi çiz ve devam et
-                                println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $worldOffset")
+                                println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $snappedOffset")
                                 finishDrawing(
                                     viewModel = viewModel,
                                     startPoint = drawingStartPoint,
                                     points = emptyList(),
-                                    currentPoint = worldOffset
+                                    currentPoint = snappedOffset
                                 )
                                 // Yeni çizgi için bu nokta başlangıç olsun
-                                drawingStartPoint = worldOffset
+                                drawingStartPoint = snappedOffset
                             }
                         }
                         DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
                             if (drawingStartPoint == null) {
-                                drawingStartPoint = worldOffset
-                                println("TugisCAD: ${activeTool.name} - Başlangıç: $worldOffset")
+                                drawingStartPoint = snappedOffset
+                                println("TugisCAD: ${activeTool.name} - Başlangıç: $snappedOffset")
                             } else {
-                                println("TugisCAD: ${activeTool.name} - Bitiş: $worldOffset")
+                                println("TugisCAD: ${activeTool.name} - Bitiş: $snappedOffset")
                                 finishDrawing(
                                     viewModel = viewModel,
                                     startPoint = drawingStartPoint,
                                     points = drawingPoints,
-                                    currentPoint = worldOffset
+                                    currentPoint = snappedOffset
                                 )
                                 drawingStartPoint = null
                                 drawingPoints = emptyList()
@@ -143,7 +241,7 @@ fun CADCanvas(
                         DrawingTool.POINT -> {
                             viewModel.activeLayer.value?.let { layer ->
                                 val point = DrawingHelper.createPoint(
-                                    position = worldOffset,
+                                    position = snappedOffset,
                                     layer = layer,
                                     lineType = viewModel.activeLineType.value,
                                     color = viewModel.activeColor.value
@@ -152,19 +250,19 @@ fun CADCanvas(
                             }
                         }
                         DrawingTool.POLYLINE -> {
-                            drawingPoints = drawingPoints + worldOffset
+                            drawingPoints = drawingPoints + snappedOffset
                             if (drawingPoints.size >= 3) {
                                 val first = drawingPoints.first()
                                 val distance = kotlin.math.sqrt(
-                                    ((worldOffset.x - first.x) * (worldOffset.x - first.x) +
-                                     (worldOffset.y - first.y) * (worldOffset.y - first.y)).toDouble()
+                                    ((snappedOffset.x - first.x) * (snappedOffset.x - first.x) +
+                                     (snappedOffset.y - first.y) * (snappedOffset.y - first.y)).toDouble()
                                 )
                                 if (distance < 20) {
                                     finishDrawing(
                                         viewModel = viewModel,
                                         startPoint = null,
                                         points = drawingPoints,
-                                        currentPoint = worldOffset
+                                        currentPoint = snappedOffset
                                     )
                                     drawingPoints = emptyList()
                                 }
@@ -297,6 +395,29 @@ fun CADCanvas(
                 color = Color.Yellow.copy(alpha = 0.7f),
                 style = Stroke(width = 2f)
             )
+        }
+
+        // Snap göstergesi - Yakınında snap noktası varsa göster
+        if (viewModel.snapMode.value != com.tugi.tugiscad.ui.viewmodel.SnapMode.NONE) {
+            currentMousePosition?.let { mousePos ->
+                val snappedPos = snapToPoint(mousePos, viewModel.snapMode.value)
+                if (snappedPos != mousePos) {
+                    // Snap noktası bulundu, kırmızı daire göster
+                    val screenPos = worldToScreen(snappedPos)
+                    drawCircle(
+                        color = Color.Red,
+                        radius = 6f,
+                        center = screenPos,
+                        style = Stroke(width = 2f)
+                    )
+                    // Snap tipi göstergesi (küçük kare)
+                    drawRect(
+                        color = Color.Red,
+                        topLeft = Offset(screenPos.x - 3f, screenPos.y - 3f),
+                        size = androidx.compose.ui.geometry.Size(6f, 6f)
+                    )
+                }
+            }
         }
     }
 }

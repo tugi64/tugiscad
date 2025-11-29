@@ -30,6 +30,10 @@ class CADViewModel : ViewModel() {
     val activeLineType = mutableStateOf(LineType.CONTINUOUS)
     val activeColor = mutableStateOf(Color.White) // Siyah zemin için beyaz çizgi
 
+    // Mouse koordinatları (world coordinates)
+    val currentMouseX = mutableStateOf(0.0)
+    val currentMouseY = mutableStateOf(0.0)
+
     fun addLayer(layer: Layer) {
         currentProject.value?.let { project ->
             project.layers.add(layer)
