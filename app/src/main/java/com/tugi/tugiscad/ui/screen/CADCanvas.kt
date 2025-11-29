@@ -12,8 +12,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.awaitPointerEventScope
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.unit.dp
 import com.tugi.tugiscad.data.model.*
 import com.tugi.tugiscad.ui.viewmodel.CADViewModel
@@ -126,7 +125,7 @@ fun CADCanvas(
                                             drawingPoints = emptyList()
                                         }
                                         change.consume()
-                                        continue
+                                        return@forEach // continue yerine return@forEach kullan
                                     }
 
                                     // Sol tıklama
@@ -198,6 +197,9 @@ fun CADCanvas(
                                         else -> {}
                                     }
                                     change.consume()
+                                }
+                                false -> {
+                                    // Mouse button released - hiçbir şey yapma
                                 }
                             }
                         }
