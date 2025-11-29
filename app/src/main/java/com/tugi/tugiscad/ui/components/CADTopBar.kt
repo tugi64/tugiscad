@@ -161,63 +161,80 @@ private fun DrawMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
         onClick = {
             viewModel.setActiveTool(DrawingTool.LINE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Timeline, null) }
     )
     DropdownMenuItem(
         text = { Text("Çoklu Çizgi") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.POLYLINE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.ShowChart, null) }
     )
     DropdownMenuItem(
         text = { Text("Daire") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.CIRCLE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Circle, null) }
     )
     DropdownMenuItem(
         text = { Text("Yay") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.ARC)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Architecture, null) }
     )
     DropdownMenuItem(
         text = { Text("Elips") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.ELLIPSE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Adjust, null) }
     )
     DropdownMenuItem(
         text = { Text("Dikdörtgen") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.RECTANGLE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Rectangle, null) }
     )
     DropdownMenuItem(
         text = { Text("Nokta") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.POINT)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.FiberManualRecord, null) }
     )
     DropdownMenuItem(
         text = { Text("Metin") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.TEXT)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.TextFields, null) }
     )
     DropdownMenuItem(
         text = { Text("Tarama") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.HATCH)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.GridOn, null) }
+    )
+    DropdownMenuItem(
+        text = { Text("Sembol") },
+        onClick = {
+            viewModel.setActiveTool(DrawingTool.SYMBOL)
+            onDismiss()
+        },
+        leadingIcon = { Icon(Icons.Default.AccountTree, null) }
     )
 }
 
@@ -237,35 +254,40 @@ private fun EditMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
         onClick = {
             viewModel.setActiveTool(DrawingTool.MOVE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.OpenWith, null) }
     )
     DropdownMenuItem(
         text = { Text("Kopyala") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.COPY)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.ContentCopy, null) }
     )
     DropdownMenuItem(
         text = { Text("Döndür") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.ROTATE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.RotateRight, null) }
     )
     DropdownMenuItem(
         text = { Text("Ölçekle") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.SCALE)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.ZoomOutMap, null) }
     )
     DropdownMenuItem(
         text = { Text("Aynala") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.MIRROR)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.FlipCameraAndroid, null) }
     )
     Divider()
     DropdownMenuItem(
@@ -273,21 +295,24 @@ private fun EditMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
         onClick = {
             viewModel.setActiveTool(DrawingTool.TRIM)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.ContentCut, null) }
     )
     DropdownMenuItem(
         text = { Text("Uzat") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.EXTEND)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.CallMade, null) }
     )
     DropdownMenuItem(
         text = { Text("Paralel") },
         onClick = {
             viewModel.setActiveTool(DrawingTool.OFFSET)
             onDismiss()
-        }
+        },
+        leadingIcon = { Icon(Icons.Default.Polyline, null) }
     )
 }
 
@@ -337,15 +362,23 @@ private fun QueryMenuItems(viewModel: CADViewModel, onDismiss: () -> Unit) {
     )
     DropdownMenuItem(
         text = { Text("Alan Sorgu") },
-        onClick = { onDismiss() }
+        onClick = { onDismiss() },
+        leadingIcon = { Icon(Icons.Default.Square, null) }
     )
     DropdownMenuItem(
         text = { Text("Koordinat Sorgu") },
-        onClick = { onDismiss() }
+        onClick = { onDismiss() },
+        leadingIcon = { Icon(Icons.Default.MyLocation, null) }
     )
     DropdownMenuItem(
         text = { Text("Mesafe Ölç") },
-        onClick = { onDismiss() }
+        onClick = { onDismiss() },
+        leadingIcon = { Icon(Icons.Default.Straighten, null) }
+    )
+    DropdownMenuItem(
+        text = { Text("Açı Ölç") },
+        onClick = { onDismiss() },
+        leadingIcon = { Icon(Icons.Default.Transform, null) }
     )
 }
 

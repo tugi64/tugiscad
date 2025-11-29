@@ -83,6 +83,14 @@ fun DrawingToolbar(
             onClick = { viewModel.setActiveTool(DrawingTool.ARC) }
         )
 
+        // Elips
+        ToolButton(
+            icon = Icons.Default.Adjust,
+            label = "Elips",
+            isSelected = viewModel.activeTool.value == DrawingTool.ELLIPSE,
+            onClick = { viewModel.setActiveTool(DrawingTool.ELLIPSE) }
+        )
+
         // Nokta
         ToolButton(
             icon = Icons.Default.FiberManualRecord,
@@ -97,6 +105,22 @@ fun DrawingToolbar(
             label = "Metin",
             isSelected = viewModel.activeTool.value == DrawingTool.TEXT,
             onClick = { viewModel.setActiveTool(DrawingTool.TEXT) }
+        )
+
+        // Tarama (Hatch)
+        ToolButton(
+            icon = Icons.Default.GridOn,
+            label = "Tarama",
+            isSelected = viewModel.activeTool.value == DrawingTool.HATCH,
+            onClick = { viewModel.setActiveTool(DrawingTool.HATCH) }
+        )
+
+        // Sembol
+        ToolButton(
+            icon = Icons.Default.AccountTree,
+            label = "Sembol",
+            isSelected = viewModel.activeTool.value == DrawingTool.SYMBOL,
+            onClick = { viewModel.setActiveTool(DrawingTool.SYMBOL) }
         )
 
         Divider(modifier = Modifier.padding(vertical = 4.dp))
@@ -131,6 +155,38 @@ fun DrawingToolbar(
             label = "Ölçekle",
             isSelected = viewModel.activeTool.value == DrawingTool.SCALE,
             onClick = { viewModel.setActiveTool(DrawingTool.SCALE) }
+        )
+
+        // Aynala
+        ToolButton(
+            icon = Icons.Default.FlipCameraAndroid,
+            label = "Aynala",
+            isSelected = viewModel.activeTool.value == DrawingTool.MIRROR,
+            onClick = { viewModel.setActiveTool(DrawingTool.MIRROR) }
+        )
+
+        // Kırp
+        ToolButton(
+            icon = Icons.Default.ContentCut,
+            label = "Kırp",
+            isSelected = viewModel.activeTool.value == DrawingTool.TRIM,
+            onClick = { viewModel.setActiveTool(DrawingTool.TRIM) }
+        )
+
+        // Uzat
+        ToolButton(
+            icon = Icons.Default.CallMade,
+            label = "Uzat",
+            isSelected = viewModel.activeTool.value == DrawingTool.EXTEND,
+            onClick = { viewModel.setActiveTool(DrawingTool.EXTEND) }
+        )
+
+        // Ofset
+        ToolButton(
+            icon = Icons.Default.Polyline,
+            label = "Ofset",
+            isSelected = viewModel.activeTool.value == DrawingTool.OFFSET,
+            onClick = { viewModel.setActiveTool(DrawingTool.OFFSET) }
         )
     }
 }
