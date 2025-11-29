@@ -24,6 +24,7 @@ fun CADTopBar(
     onMenuClick: (MenuType) -> Unit
 ) {
     var expanded by remember { mutableStateOf<MenuType?>(null) }
+    var showNewProjectDialog by remember { mutableStateOf(false) }
 
     TopAppBar(
         title = {
@@ -62,10 +63,21 @@ fun CADTopBar(
 
     // Dropdown menüler
     expanded?.let { menuType ->
-        CADDropdownMenu(menuType, viewModel) {
+        CADDropdownMenu(menuType, viewModel,
+            onDismiss = { expanded = null },
+            onShowNewProject = { showNewProjectDialog = true }
+        ) {
             expanded = null
             onMenuClick(menuType)
         }
+    }
+
+    // Yeni Proje Dialog
+    if (showNewProjectDialog) {
+        NewProjectDialog(
+            viewModel = viewModel,
+            onDismiss = { showNewProjectDialog = false }
+        )
     }
 }
 
@@ -84,14 +96,16 @@ private fun CADMenuItem(
 private fun CADDropdownMenu(
     menuType: MenuType,
     viewModel: CADViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onShowNewProject: () -> Unit = {},
+    onAction: () -> Unit
 ) {
     DropdownMenu(
         expanded = true,
         onDismissRequest = onDismiss
     ) {
         when (menuType) {
-            MenuType.PROJECT -> ProjectMenuItems(viewModel, onDismiss)
+            MenuType.PROJECT -> ProjectMenuItems(viewModel, onDismiss, onShowNewProject)
             MenuType.DRAW -> DrawMenuItems(viewModel, onDismiss)
             MenuType.EDIT -> EditMenuItems(viewModel, onDismiss)
             MenuType.VIEW -> ViewMenuItems(viewModel, onDismiss)
@@ -104,13 +118,14 @@ private fun CADDropdownMenu(
 @Composable
 private fun ProjectMenuItems(
     viewModel: CADViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onShowNewProject: () -> Unit
 ) {
     DropdownMenuItem(
         text = { Text("Yeni Proje") },
         onClick = {
-            // TODO: New project
             onDismiss()
+            onShowNewProject()
         },
         leadingIcon = { Icon(Icons.Default.Add, null) }
     )
