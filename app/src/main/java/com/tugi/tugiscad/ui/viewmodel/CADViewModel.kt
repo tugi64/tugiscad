@@ -24,10 +24,11 @@ class CADViewModel : ViewModel() {
     val showGrid = mutableStateOf(true)
     val snapMode = mutableStateOf(SnapMode.NONE)
     val zoomLevel = mutableStateOf(1.0)
-    val panOffsetX = mutableStateOf(0f)
-    val panOffsetY = mutableStateOf(0f)
+    // Canvas'ı merkeze almak için başlangıç değerleri
+    val panOffsetX = mutableStateOf(400f) // Ekranın ortasına yakın
+    val panOffsetY = mutableStateOf(400f)
     val activeLineType = mutableStateOf(LineType.CONTINUOUS)
-    val activeColor = mutableStateOf(Color.Black)
+    val activeColor = mutableStateOf(Color.White) // Siyah zemin için beyaz çizgi
 
     fun addLayer(layer: Layer) {
         currentProject.value?.let { project ->
@@ -77,8 +78,8 @@ class CADViewModel : ViewModel() {
 
     fun resetView() {
         zoomLevel.value = 1.0
-        panOffsetX.value = 0f
-        panOffsetY.value = 0f
+        panOffsetX.value = 400f
+        panOffsetY.value = 400f
     }
 
     fun toggleGrid() {

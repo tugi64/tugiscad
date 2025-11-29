@@ -50,6 +50,24 @@ fun CADCanvas(
     var drawingPoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var currentMousePosition by remember { mutableStateOf<Offset?>(null) }
 
+    // Escape tuşu ile polyline'ı bitir
+    LaunchedEffect(activeTool) {
+        // Araç değiştiğinde çizimi temizle
+        if (activeTool != DrawingTool.POLYLINE) {
+            if (drawingPoints.size >= 2) {
+                // Polyline'dan çıkıyoruz, son çizimi kaydet
+                finishDrawing(
+                    viewModel = viewModel,
+                    startPoint = null,
+                    points = drawingPoints,
+                    currentPoint = drawingPoints.last()
+                )
+            }
+            drawingPoints = emptyList()
+            drawingStartPoint = null
+        }
+    }
+
     // Koordinat dönüşüm fonksiyonları
     fun screenToWorld(screenPos: Offset): Offset {
         return Offset(
@@ -79,8 +97,10 @@ fun CADCanvas(
                             if (drawingStartPoint == null) {
                                 // İlk tıklama - başlangıç noktası (world koordinatları)
                                 drawingStartPoint = worldOffset
+                                println("TugisCAD: ${activeTool.name} - Başlangıç: $worldOffset")
                             } else {
                                 // İkinci tıklama - çizimi tamamla (world koordinatları)
+                                println("TugisCAD: ${activeTool.name} - Bitiş: $worldOffset")
                                 finishDrawing(
                                     viewModel = viewModel,
                                     startPoint = drawingStartPoint,
@@ -89,6 +109,8 @@ fun CADCanvas(
                                 )
                                 drawingStartPoint = null
                                 drawingPoints = emptyList()
+                                // Araç aynı kalmalı, SELECT'e dönmemeli!
+                                println("TugisCAD: Çizim tamamlandı. Araç hala: ${viewModel.activeTool.value}")
                             }
                         }
                         DrawingTool.POINT -> {
@@ -106,6 +128,25 @@ fun CADCanvas(
                         DrawingTool.POLYLINE -> {
                             // Her tıklamada nokta ekle (world koordinatları)
                             drawingPoints = drawingPoints + worldOffset
+
+                            // Eğer 2'den fazla nokta varsa ve son nokta ilk noktaya yakınsa, kapat
+                            if (drawingPoints.size >= 3) {
+                                val first = drawingPoints.first()
+                                val distance = kotlin.math.sqrt(
+                                    ((worldOffset.x - first.x) * (worldOffset.x - first.x) +
+                                     (worldOffset.y - first.y) * (worldOffset.y - first.y)).toDouble()
+                                )
+                                // Eğer ilk noktaya 20 birimden yakınsa, polyline'ı kapat
+                                if (distance < 20) {
+                                    finishDrawing(
+                                        viewModel = viewModel,
+                                        startPoint = null,
+                                        points = drawingPoints,
+                                        currentPoint = worldOffset
+                                    )
+                                    drawingPoints = emptyList()
+                                }
+                            }
                         }
                         else -> {}
                     }
