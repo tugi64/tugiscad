@@ -42,34 +42,52 @@ fun CADCanvas(
     var drawingPoints by remember { mutableStateOf<List<Offset>>(emptyList()) }
     var currentMousePosition by remember { mutableStateOf<Offset?>(null) }
 
+    // Koordinat dönüşüm fonksiyonları
+    fun screenToWorld(screenPos: Offset): Offset {
+        return Offset(
+            (screenPos.x - panX) / zoom.toFloat(),
+            (screenPos.y - panY) / zoom.toFloat()
+        )
+    }
+
+    fun worldToScreen(worldPos: Offset): Offset {
+        return Offset(
+            worldPos.x * zoom.toFloat() + panX,
+            worldPos.y * zoom.toFloat() + panY
+        )
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(activeTool) {
                 detectTapGestures { offset ->
+                    // Screen koordinatını world koordinatına çevir
+                    val worldOffset = screenToWorld(offset)
+
                     when (activeTool) {
                         DrawingTool.LINE, DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
                             if (drawingStartPoint == null) {
-                                // İlk tıklama - başlangıç noktası
-                                drawingStartPoint = offset
+                                // İlk tıklama - başlangıç noktası (world koordinatları)
+                                drawingStartPoint = worldOffset
                             } else {
-                                // İkinci tıklama - çizimi tamamla
+                                // İkinci tıklama - çizimi tamamla (world koordinatları)
                                 finishDrawing(
                                     viewModel = viewModel,
                                     startPoint = drawingStartPoint,
                                     points = drawingPoints,
-                                    currentPoint = offset
+                                    currentPoint = worldOffset
                                 )
                                 drawingStartPoint = null
                                 drawingPoints = emptyList()
                             }
                         }
                         DrawingTool.POINT -> {
-                            // Nokta oluştur ve hemen ekle
+                            // Nokta oluştur ve hemen ekle (world koordinatları)
                             viewModel.activeLayer.value?.let { layer ->
                                 val point = DrawingHelper.createPoint(
-                                    position = offset,
+                                    position = worldOffset,
                                     layer = layer,
                                     lineType = viewModel.activeLineType.value,
                                     color = viewModel.activeColor.value
@@ -78,8 +96,8 @@ fun CADCanvas(
                             }
                         }
                         DrawingTool.POLYLINE -> {
-                            // Her tıklamada nokta ekle
-                            drawingPoints = drawingPoints + offset
+                            // Her tıklamada nokta ekle (world koordinatları)
+                            drawingPoints = drawingPoints + worldOffset
                         }
                         else -> {}
                     }
@@ -88,9 +106,9 @@ fun CADCanvas(
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
-                        // Drag başladığında mouse position'ı güncelle
+                        // Drag başladığında mouse position'ı güncelle (world koordinatları)
                         if (drawingStartPoint != null) {
-                            currentMousePosition = offset
+                            currentMousePosition = screenToWorld(offset)
                         }
                     },
                     onDrag = { change, dragAmount ->
@@ -101,8 +119,8 @@ fun CADCanvas(
                                 viewModel.pan(dragAmount.x, dragAmount.y)
                             }
                             else -> {
-                                // Diğer araçlar için fare pozisyonunu güncelle
-                                currentMousePosition = change.position
+                                // Diğer araçlar için fare pozisyonunu güncelle (world koordinatları)
+                                currentMousePosition = screenToWorld(change.position)
                             }
                         }
                     }
@@ -133,57 +151,61 @@ fun CADCanvas(
         // Çizim önizlemesi
         drawingStartPoint?.let { start ->
             currentMousePosition?.let { current ->
+                // World koordinatlarını screen koordinatlarına çevir
+                val startScreen = worldToScreen(start)
+                val currentScreen = worldToScreen(current)
+
                 when (activeTool) {
                     DrawingTool.LINE -> {
                         drawLine(
                             color = Color.Yellow.copy(alpha = 0.7f),
-                            start = start,
-                            end = current,
+                            start = startScreen,
+                            end = currentScreen,
                             strokeWidth = 2f
                         )
                     }
                     DrawingTool.RECTANGLE -> {
-                        val width = current.x - start.x
-                        val height = current.y - start.y
+                        val width = currentScreen.x - startScreen.x
+                        val height = currentScreen.y - startScreen.y
                         drawRect(
                             color = Color.Yellow.copy(alpha = 0.7f),
-                            topLeft = start,
+                            topLeft = startScreen,
                             size = androidx.compose.ui.geometry.Size(width, height),
                             style = Stroke(width = 2f)
                         )
                     }
                     DrawingTool.CIRCLE -> {
                         val radius = kotlin.math.sqrt(
-                            ((current.x - start.x) * (current.x - start.x) +
-                            (current.y - start.y) * (current.y - start.y)).toDouble()
+                            ((currentScreen.x - startScreen.x) * (currentScreen.x - startScreen.x) +
+                            (currentScreen.y - startScreen.y) * (currentScreen.y - startScreen.y)).toDouble()
                         ).toFloat()
                         drawCircle(
                             color = Color.Yellow.copy(alpha = 0.7f),
                             radius = radius,
-                            center = start,
+                            center = startScreen,
                             style = Stroke(width = 2f)
                         )
                     }
                     DrawingTool.ARC -> {
                         val radius = kotlin.math.sqrt(
-                            ((current.x - start.x) * (current.x - start.x) +
-                            (current.y - start.y) * (current.y - start.y)).toDouble()
+                            ((currentScreen.x - startScreen.x) * (currentScreen.x - startScreen.x) +
+                            (currentScreen.y - startScreen.y) * (currentScreen.y - startScreen.y)).toDouble()
                         ).toFloat()
                         drawCircle(
                             color = Color.Yellow.copy(alpha = 0.5f),
                             radius = radius,
-                            center = start,
+                            center = startScreen,
                             style = Stroke(width = 2f)
                         )
                     }
                     DrawingTool.ELLIPSE -> {
-                        val width = kotlin.math.abs(current.x - start.x)
-                        val height = kotlin.math.abs(current.y - start.y)
+                        val width = kotlin.math.abs(currentScreen.x - startScreen.x)
+                        val height = kotlin.math.abs(currentScreen.y - startScreen.y)
                         drawOval(
                             color = Color.Yellow.copy(alpha = 0.7f),
                             topLeft = Offset(
-                                kotlin.math.min(start.x, current.x),
-                                kotlin.math.min(start.y, current.y)
+                                kotlin.math.min(startScreen.x, currentScreen.x),
+                                kotlin.math.min(startScreen.y, currentScreen.y)
                             ),
                             size = androidx.compose.ui.geometry.Size(width, height),
                             style = Stroke(width = 2f)
@@ -197,13 +219,22 @@ fun CADCanvas(
         // Polyline önizlemesi
         if (drawingPoints.isNotEmpty() && activeTool == DrawingTool.POLYLINE) {
             val path = Path()
-            path.moveTo(drawingPoints.first().x, drawingPoints.first().y)
+            // İlk noktayı world'den screen'e çevir
+            val firstScreen = worldToScreen(drawingPoints.first())
+            path.moveTo(firstScreen.x, firstScreen.y)
+
+            // Diğer noktaları da çevir
             drawingPoints.drop(1).forEach { point ->
-                path.lineTo(point.x, point.y)
+                val screenPoint = worldToScreen(point)
+                path.lineTo(screenPoint.x, screenPoint.y)
             }
+
+            // Mevcut mouse pozisyonunu da ekle
             currentMousePosition?.let {
-                path.lineTo(it.x, it.y)
+                val currentScreen = worldToScreen(it)
+                path.lineTo(currentScreen.x, currentScreen.y)
             }
+
             drawPath(
                 path = path,
                 color = Color.Yellow.copy(alpha = 0.7f),
