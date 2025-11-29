@@ -37,6 +37,14 @@ fun CADCanvas(
     val showGrid by viewModel.showGrid
     val activeTool by viewModel.activeTool
 
+    // Obje sayısını reactive hale getir
+    val objectCount = project?.objects?.size ?: 0
+
+    // Debug: Obje sayısını konsola yazdır
+    LaunchedEffect(objectCount) {
+        println("TugisCAD: Canvas'ta ${objectCount} obje var")
+    }
+
     // Çizim için geçici state'ler
     var drawingStartPoint by remember { mutableStateOf<Offset?>(null) }
     var drawingPoints by remember { mutableStateOf<List<Offset>>(emptyList()) }

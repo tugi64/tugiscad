@@ -30,7 +30,13 @@ class CADViewModel : ViewModel() {
     val activeColor = mutableStateOf(Color.Black)
 
     fun addLayer(layer: Layer) {
-        currentProject.value?.layers?.add(layer)
+        currentProject.value?.let { project ->
+            project.layers.add(layer)
+            // State'i tetiklemek için yeni referans oluştur
+            currentProject.value = project.copy(
+                layers = project.layers.toMutableList()
+            )
+        }
     }
 
     fun setActiveLayer(layer: Layer) {
@@ -42,7 +48,14 @@ class CADViewModel : ViewModel() {
     }
 
     fun addObject(obj: CADObject) {
-        currentProject.value?.objects?.add(obj)
+        currentProject.value?.let { project ->
+            project.objects.add(obj)
+            // State'i tetiklemek için yeni referans oluştur
+            currentProject.value = project.copy(
+                objects = project.objects.toMutableList()
+            )
+            println("TugisCAD: Obje eklendi. Toplam: ${project.objects.size}")
+        }
     }
 
     fun pan(deltaX: Float, deltaY: Float) {
