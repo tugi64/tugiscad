@@ -3,6 +3,7 @@ package com.tugi.tugiscad.ui.screen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -87,135 +88,100 @@ fun CADCanvas(
             .fillMaxSize()
             .background(Color.Black)
             .pointerInput(activeTool) {
+                // Mouse pozisyonunu sürekli takip et
                 awaitPointerEventScope {
                     while (true) {
-                        val event = awaitPointerEvent()
-
-                        event.changes.forEach { change ->
-                            // Mouse pozisyonunu sürekli güncelle
-                            currentMousePosition = screenToWorld(change.position)
-
-                            when (change.pressed) {
-                                true -> {
-                                    // Mouse'un hangi tuşuna basıldığını kontrol et
-                                    val isRightClick = change.id.value > 0 // Basit sağ tık kontrolü
-                                    val worldOffset = screenToWorld(change.position)
-
-                                    if (isRightClick || change.previousPressed != change.pressed) {
-                                        // Sağ tıklama - Çizimi bitir
-                                        if (activeTool == DrawingTool.LINE && drawingStartPoint != null) {
-                                            // LINE için son çizgiyi çiz ve bitir
-                                            finishDrawing(
-                                                viewModel = viewModel,
-                                                startPoint = drawingStartPoint,
-                                                points = drawingPoints,
-                                                currentPoint = worldOffset
-                                            )
-                                            drawingStartPoint = null
-                                            drawingPoints = emptyList()
-                                            println("TugisCAD: Sağ tık - Çizim tamamlandı")
-                                        } else if (activeTool == DrawingTool.POLYLINE && drawingPoints.isNotEmpty()) {
-                                            // Polyline'ı bitir
-                                            finishDrawing(
-                                                viewModel = viewModel,
-                                                startPoint = null,
-                                                points = drawingPoints,
-                                                currentPoint = worldOffset
-                                            )
-                                            drawingPoints = emptyList()
-                                        }
-                                        change.consume()
-                                        return@forEach // continue yerine return@forEach kullan
-                                    }
-
-                                    // Sol tıklama
-                                    when (activeTool) {
-                                        DrawingTool.LINE -> {
-                                            if (drawingStartPoint == null) {
-                                                // İlk tıklama - başlangıç noktası
-                                                drawingStartPoint = worldOffset
-                                                println("TugisCAD: LINE - Başlangıç: $worldOffset")
-                                            } else {
-                                                // Sonraki tıklamalar - çizgi çiz ve devam et
-                                                println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $worldOffset")
-                                                finishDrawing(
-                                                    viewModel = viewModel,
-                                                    startPoint = drawingStartPoint,
-                                                    points = emptyList(),
-                                                    currentPoint = worldOffset
-                                                )
-                                                // Yeni çizgi için bu nokta başlangıç olsun
-                                                drawingStartPoint = worldOffset
-                                            }
-                                        }
-                                        DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
-                                            if (drawingStartPoint == null) {
-                                                drawingStartPoint = worldOffset
-                                                println("TugisCAD: ${activeTool.name} - Başlangıç: $worldOffset")
-                                            } else {
-                                                println("TugisCAD: ${activeTool.name} - Bitiş: $worldOffset")
-                                                finishDrawing(
-                                                    viewModel = viewModel,
-                                                    startPoint = drawingStartPoint,
-                                                    points = drawingPoints,
-                                                    currentPoint = worldOffset
-                                                )
-                                                drawingStartPoint = null
-                                                drawingPoints = emptyList()
-                                            }
-                                        }
-                                        DrawingTool.POINT -> {
-                                            viewModel.activeLayer.value?.let { layer ->
-                                                val point = DrawingHelper.createPoint(
-                                                    position = worldOffset,
-                                                    layer = layer,
-                                                    lineType = viewModel.activeLineType.value,
-                                                    color = viewModel.activeColor.value
-                                                )
-                                                viewModel.addObject(point)
-                                            }
-                                        }
-                                        DrawingTool.POLYLINE -> {
-                                            drawingPoints = drawingPoints + worldOffset
-                                            if (drawingPoints.size >= 3) {
-                                                val first = drawingPoints.first()
-                                                val distance = kotlin.math.sqrt(
-                                                    ((worldOffset.x - first.x) * (worldOffset.x - first.x) +
-                                                     (worldOffset.y - first.y) * (worldOffset.y - first.y)).toDouble()
-                                                )
-                                                if (distance < 20) {
-                                                    finishDrawing(
-                                                        viewModel = viewModel,
-                                                        startPoint = null,
-                                                        points = drawingPoints,
-                                                        currentPoint = worldOffset
-                                                    )
-                                                    drawingPoints = emptyList()
-                                                }
-                                            }
-                                        }
-                                        else -> {}
-                                    }
-                                    change.consume()
-                                }
-                                false -> {
-                                    // Mouse button released - hiçbir şey yapma
-                                }
+                        val event = awaitPointerEvent(PointerEventPass.Main)
+                        event.changes.firstOrNull()?.let { change ->
+                            if (drawingStartPoint != null || activeTool == DrawingTool.POLYLINE) {
+                                currentMousePosition = screenToWorld(change.position)
                             }
                         }
                     }
                 }
             }
-            .pointerInput(Unit) {
-                // Pan için ayrı bir gesture detector
-                detectDragGestures(
-                    onDrag = { change, dragAmount ->
-                        if (activeTool == DrawingTool.SELECT) {
-                            change.consume()
-                            viewModel.pan(dragAmount.x, dragAmount.y)
+            .pointerInput(activeTool) {
+                // Sol tıklama için tap gesture
+                detectTapGestures { offset ->
+                    val worldOffset = screenToWorld(offset)
+
+                    when (activeTool) {
+                        DrawingTool.LINE -> {
+                            if (drawingStartPoint == null) {
+                                // İlk tıklama - başlangıç noktası
+                                drawingStartPoint = worldOffset
+                                println("TugisCAD: LINE - Başlangıç: $worldOffset")
+                            } else {
+                                // Sonraki tıklamalar - çizgi çiz ve devam et
+                                println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $worldOffset")
+                                finishDrawing(
+                                    viewModel = viewModel,
+                                    startPoint = drawingStartPoint,
+                                    points = emptyList(),
+                                    currentPoint = worldOffset
+                                )
+                                // Yeni çizgi için bu nokta başlangıç olsun
+                                drawingStartPoint = worldOffset
+                            }
                         }
+                        DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
+                            if (drawingStartPoint == null) {
+                                drawingStartPoint = worldOffset
+                                println("TugisCAD: ${activeTool.name} - Başlangıç: $worldOffset")
+                            } else {
+                                println("TugisCAD: ${activeTool.name} - Bitiş: $worldOffset")
+                                finishDrawing(
+                                    viewModel = viewModel,
+                                    startPoint = drawingStartPoint,
+                                    points = drawingPoints,
+                                    currentPoint = worldOffset
+                                )
+                                drawingStartPoint = null
+                                drawingPoints = emptyList()
+                            }
+                        }
+                        DrawingTool.POINT -> {
+                            viewModel.activeLayer.value?.let { layer ->
+                                val point = DrawingHelper.createPoint(
+                                    position = worldOffset,
+                                    layer = layer,
+                                    lineType = viewModel.activeLineType.value,
+                                    color = viewModel.activeColor.value
+                                )
+                                viewModel.addObject(point)
+                            }
+                        }
+                        DrawingTool.POLYLINE -> {
+                            drawingPoints = drawingPoints + worldOffset
+                            if (drawingPoints.size >= 3) {
+                                val first = drawingPoints.first()
+                                val distance = kotlin.math.sqrt(
+                                    ((worldOffset.x - first.x) * (worldOffset.x - first.x) +
+                                     (worldOffset.y - first.y) * (worldOffset.y - first.y)).toDouble()
+                                )
+                                if (distance < 20) {
+                                    finishDrawing(
+                                        viewModel = viewModel,
+                                        startPoint = null,
+                                        points = drawingPoints,
+                                        currentPoint = worldOffset
+                                    )
+                                    drawingPoints = emptyList()
+                                }
+                            }
+                        }
+                        else -> {}
                     }
-                )
+                }
+            }
+            .pointerInput(Unit) {
+                // Pan için drag gesture (sadece SELECT modunda)
+                detectDragGestures { change, dragAmount ->
+                    if (activeTool == DrawingTool.SELECT) {
+                        change.consume()
+                        viewModel.pan(dragAmount.x, dragAmount.y)
+                    }
+                }
             }
     ) {
         // Grid çiz
