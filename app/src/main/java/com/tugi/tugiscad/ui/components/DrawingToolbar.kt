@@ -197,7 +197,9 @@ fun DrawingToolbar(
 @Composable
 fun BottomToolbar(
     viewModel: CADViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showLayerManager: Boolean = false,
+    onToggleLayerManager: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
@@ -227,6 +229,21 @@ fun BottomToolbar(
             modifier = Modifier.padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Tabakalar
+            IconToggleButton(
+                checked = showLayerManager,
+                onCheckedChange = { onToggleLayerManager() }
+            ) {
+                Icon(
+                    Icons.Default.Layers,
+                    contentDescription = "Tabakalar",
+                    tint = if (showLayerManager)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
             // Grid
             IconToggleButton(
                 checked = viewModel.showGrid.value,

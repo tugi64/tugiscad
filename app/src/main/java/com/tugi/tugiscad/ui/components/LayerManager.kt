@@ -25,7 +25,7 @@ fun LayerManager(viewModel: CADViewModel, modifier: Modifier = Modifier) {
 
     Column(modifier = modifier
         .fillMaxHeight()
-        .width(280.dp)
+        .width(240.dp)
         .background(MaterialTheme.colorScheme.surface)) {
 
         Row(

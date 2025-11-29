@@ -18,7 +18,7 @@ fun MainScreen(
 ) {
     var showNewProjectDialog by remember { mutableStateOf(false) }
     var showProjectPropertiesDialog by remember { mutableStateOf(false) }
-    var showLayerManager by remember { mutableStateOf(true) }
+    var showLayerManager by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -40,7 +40,11 @@ fun MainScreen(
             )
         },
         bottomBar = {
-            BottomToolbar(viewModel = viewModel)
+            BottomToolbar(
+                viewModel = viewModel,
+                showLayerManager = showLayerManager,
+                onToggleLayerManager = { showLayerManager = !showLayerManager }
+            )
         }
     ) { paddingValues ->
         Row(
