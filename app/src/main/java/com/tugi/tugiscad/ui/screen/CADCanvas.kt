@@ -301,89 +301,49 @@ fun CADCanvas(
                 }
             }
             .pointerInput(Unit) {
-                // Sol tıklama için tap gesture
-                detectTapGestures { offset ->
-                    val worldOffset = screenToWorld(offset)
-                    // Snap uygula
-                    val snappedOffset = snapToPoint(worldOffset, viewModel.snapMode.value)
+                // Sol tıklama için - AutoCAD benzeri hızlı tıklama
+                awaitPointerEventScope {
+                    while (true) {
+                        // İlk down event'i bekle
+                        val down = awaitPointerEvent(PointerEventPass.Main)
+                        val downChange = down.changes.firstOrNull() ?: continue
 
-                    when (activeTool) {
-                        DrawingTool.LINE -> {
-                            if (drawingStartPoint == null) {
-                                // İlk tıklama - başlangıç noktası
-                                drawingStartPoint = snappedOffset
-                                println("TugisCAD: LINE - Başlangıç: $snappedOffset (Snap: ${viewModel.snapMode.value})")
-                            } else {
-                                // İkinci tıklama - çizgi çiz VE son nokta yeni başlangıç olsun
-                                println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $snappedOffset")
-                                finishDrawing(
-                                    viewModel = viewModel,
-                                    startPoint = drawingStartPoint,
-                                    points = emptyList(),
-                                    currentPoint = snappedOffset
-                                )
-                                // ÖNEMLİ: Son nokta yeni başlangıç (sürekli çizim için)
-                                drawingStartPoint = snappedOffset
-                                println("TugisCAD: LINE - Yeni başlangıç: $snappedOffset")
-                            }
-                        }
-                        DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
-                            if (drawingStartPoint == null) {
-                                drawingStartPoint = snappedOffset
-                                println("TugisCAD: ${activeTool.name} - Başlangıç: $snappedOffset")
-                            } else {
-                                println("TugisCAD: ${activeTool.name} - Bitiş: $snappedOffset")
-                                finishDrawing(
-                                    viewModel = viewModel,
-                                    startPoint = drawingStartPoint,
-                                    points = drawingPoints,
-                                    currentPoint = snappedOffset
-                                )
-                                // Bu şekiller için başlangıç null (tek şekil çizimi)
-                                drawingStartPoint = null
-                                drawingPoints = emptyList()
-                            }
-                        }
-                        DrawingTool.POINT -> {
-                            viewModel.activeLayer.value?.let { layer ->
-                                val point = DrawingHelper.createPoint(
-                                    position = snappedOffset,
-                                    layer = layer,
-                                    lineType = viewModel.activeLineType.value,
-                                    color = viewModel.activeColor.value
-                                )
-                                viewModel.addObject(point)
-                            }
-                        }
-                        DrawingTool.POLYLINE -> {
-                            if (drawingPoints.size >= 2) {
-                                // En az 2 nokta varsa, ilk noktaya yakın mı kontrol et
-                                val first = drawingPoints.first()
-                                val distance = kotlin.math.sqrt(
-                                    ((snappedOffset.x - first.x) * (snappedOffset.x - first.x) +
-                                     (snappedOffset.y - first.y) * (snappedOffset.y - first.y)).toDouble()
-                                )
+                        // Sadece sol tık (primary button)
+                        if (down.changes.any { it.pressed }) {
+                            val downPosition = downChange.position
 
-                                if (distance < 20 / zoom) {
-                                    // İlk noktaya yakın - Kapalı alan oluştur
-                                    // Son noktayı EKLEME, direkt polyline'ı kapat
-                                    println("TugisCAD: POLYLINE kapatılıyor - ${drawingPoints.size} nokta")
-                                    finishDrawing(
+                            // Up event'i bekle (tıklama tamamlandı)
+                            val up = awaitPointerEvent(PointerEventPass.Main)
+                            val upChange = up.changes.firstOrNull()
+
+                            if (upChange != null && !upChange.pressed) {
+                                // Tıklama tamamlandı!
+                                val clickPosition = upChange.position
+
+                                // Çok az hareket varsa tıklama sayılır (AutoCAD gibi)
+                                val dx = clickPosition.x - downPosition.x
+                                val dy = clickPosition.y - downPosition.y
+                                val distance = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
+
+                                if (distance < 10) { // 10 piksel tolerans
+                                    val worldOffset = screenToWorld(clickPosition)
+                                    val snappedOffset = snapToPoint(worldOffset, viewModel.snapMode.value)
+
+                                    handleClick(
+                                        snappedOffset = snappedOffset,
+                                        activeTool = activeTool,
                                         viewModel = viewModel,
-                                        startPoint = null,
-                                        points = drawingPoints, // Son noktayı ekleme
-                                        currentPoint = first // İlk noktaya dön
+                                        drawingStartPoint = drawingStartPoint,
+                                        drawingPoints = drawingPoints,
+                                        zoom = zoom,
+                                        onStartPointChanged = { drawingStartPoint = it },
+                                        onPointsChanged = { drawingPoints = it }
                                     )
-                                    drawingPoints = emptyList()
-                                    return@detectTapGestures
+
+                                    upChange.consume()
                                 }
                             }
-
-                            // Normal nokta ekleme
-                            drawingPoints = drawingPoints + snappedOffset
-                            println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size})")
                         }
-                        else -> {}
                     }
                 }
             }
@@ -787,6 +747,98 @@ private fun DrawScope.drawSymbol(symbol: CADObject.Symbol, zoom: Double, panX: F
     // TODO: Sembol çizimi
 }
 
+
+/**
+ * Tıklama event'ini işle
+ */
+private fun handleClick(
+    snappedOffset: Offset,
+    activeTool: DrawingTool,
+    viewModel: CADViewModel,
+    drawingStartPoint: Offset?,
+    drawingPoints: List<Offset>,
+    zoom: Double,
+    onStartPointChanged: (Offset?) -> Unit,
+    onPointsChanged: (List<Offset>) -> Unit
+) {
+    when (activeTool) {
+        DrawingTool.LINE -> {
+            if (drawingStartPoint == null) {
+                // İlk tıklama - başlangıç noktası
+                onStartPointChanged(snappedOffset)
+                println("TugisCAD: LINE - Başlangıç: $snappedOffset")
+            } else {
+                // İkinci tıklama - çizgi çiz VE son nokta yeni başlangıç olsun
+                println("TugisCAD: LINE - Segment: $drawingStartPoint -> $snappedOffset")
+                finishDrawing(
+                    viewModel = viewModel,
+                    startPoint = drawingStartPoint,
+                    points = emptyList(),
+                    currentPoint = snappedOffset
+                )
+                // ÖNEMLİ: Son nokta yeni başlangıç (sürekli çizim için)
+                onStartPointChanged(snappedOffset)
+                println("TugisCAD: LINE - Yeni başlangıç: $snappedOffset")
+            }
+        }
+        DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
+            if (drawingStartPoint == null) {
+                onStartPointChanged(snappedOffset)
+                println("TugisCAD: ${activeTool.name} - Başlangıç: $snappedOffset")
+            } else {
+                println("TugisCAD: ${activeTool.name} - Bitiş: $snappedOffset")
+                finishDrawing(
+                    viewModel = viewModel,
+                    startPoint = drawingStartPoint,
+                    points = drawingPoints,
+                    currentPoint = snappedOffset
+                )
+                // Bu şekiller için başlangıç null (tek şekil çizimi)
+                onStartPointChanged(null)
+                onPointsChanged(emptyList())
+            }
+        }
+        DrawingTool.POINT -> {
+            viewModel.activeLayer.value?.let { layer ->
+                val point = DrawingHelper.createPoint(
+                    position = snappedOffset,
+                    layer = layer,
+                    lineType = viewModel.activeLineType.value,
+                    color = viewModel.activeColor.value
+                )
+                viewModel.addObject(point)
+            }
+        }
+        DrawingTool.POLYLINE -> {
+            if (drawingPoints.size >= 2) {
+                // En az 2 nokta varsa, ilk noktaya yakın mı kontrol et
+                val first = drawingPoints.first()
+                val distance = kotlin.math.sqrt(
+                    ((snappedOffset.x - first.x) * (snappedOffset.x - first.x) +
+                     (snappedOffset.y - first.y) * (snappedOffset.y - first.y)).toDouble()
+                )
+
+                if (distance < 20 / zoom) {
+                    // İlk noktaya yakın - Kapalı alan oluştur
+                    println("TugisCAD: POLYLINE kapatılıyor - ${drawingPoints.size} nokta")
+                    finishDrawing(
+                        viewModel = viewModel,
+                        startPoint = null,
+                        points = drawingPoints,
+                        currentPoint = first
+                    )
+                    onPointsChanged(emptyList())
+                    return
+                }
+            }
+
+            // Normal nokta ekleme
+            onPointsChanged(drawingPoints + snappedOffset)
+            println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size + 1})")
+        }
+        else -> {}
+    }
+}
 
 /**
  * Çizimi tamamla
