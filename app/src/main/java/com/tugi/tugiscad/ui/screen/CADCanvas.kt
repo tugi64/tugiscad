@@ -75,8 +75,16 @@ fun CADCanvas(
                 when (keyCode) {
                     // ESC - İşlemi iptal et
                     android.view.KeyEvent.KEYCODE_ESCAPE -> {
-                        drawingStartPoint = null
-                        drawingPoints = emptyList()
+                        if (activeTool == DrawingTool.LINE && drawingStartPoint != null) {
+                            // LINE modunda sürekli çizimden çık
+                            drawingStartPoint = null
+                            println("TugisCAD: ESC - LINE çizimi iptal edildi")
+                        } else {
+                            // Diğer modlarda çizimi iptal et
+                            drawingStartPoint = null
+                            drawingPoints = emptyList()
+                            println("TugisCAD: ESC - Çizim iptal edildi")
+                        }
                         true
                     }
                     // F4 - ENDPOINT snap
@@ -284,7 +292,7 @@ fun CADCanvas(
                                 drawingStartPoint = snappedOffset
                                 println("TugisCAD: LINE - Başlangıç: $snappedOffset (Snap: ${viewModel.snapMode.value})")
                             } else {
-                                // Sonraki tıklamalar - çizgi çiz ve devam et
+                                // İkinci tıklama - çizgi çiz VE son nokta yeni başlangıç olsun
                                 println("TugisCAD: LINE - Segment: ${drawingStartPoint} -> $snappedOffset")
                                 finishDrawing(
                                     viewModel = viewModel,
@@ -292,8 +300,9 @@ fun CADCanvas(
                                     points = emptyList(),
                                     currentPoint = snappedOffset
                                 )
-                                // Yeni çizgi için bu nokta başlangıç olsun
+                                // ÖNEMLİ: Son nokta yeni başlangıç (sürekli çizim için)
                                 drawingStartPoint = snappedOffset
+                                println("TugisCAD: LINE - Yeni başlangıç: $snappedOffset")
                             }
                         }
                         DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
@@ -308,6 +317,7 @@ fun CADCanvas(
                                     points = drawingPoints,
                                     currentPoint = snappedOffset
                                 )
+                                // Bu şekiller için başlangıç null (tek şekil çizimi)
                                 drawingStartPoint = null
                                 drawingPoints = emptyList()
                             }
@@ -738,6 +748,8 @@ private fun finishDrawing(
         val lineType = viewModel.activeLineType.value
         val color = viewModel.activeColor.value
 
+        println("TugisCAD: finishDrawing - Tool: ${viewModel.activeTool.value}, Start: $startPoint, End: $currentPoint")
+
         when (viewModel.activeTool.value) {
             DrawingTool.LINE -> {
                 startPoint?.let { start ->
@@ -749,6 +761,7 @@ private fun finishDrawing(
                         color = color
                     )
                     viewModel.addObject(line)
+                    println("TugisCAD: LINE oluşturuldu - Start:(${start.x},${start.y}) End:(${currentPoint.x},${currentPoint.y})")
                 }
             }
             DrawingTool.RECTANGLE -> {
@@ -774,6 +787,7 @@ private fun finishDrawing(
                         color = color
                     )
                     viewModel.addObject(circle)
+                    println("TugisCAD: CIRCLE oluşturuldu - Center:(${start.x},${start.y}) Radius:$radius")
                 }
             }
             DrawingTool.ARC -> {
