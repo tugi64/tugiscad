@@ -260,7 +260,7 @@ fun CADCanvas(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(activeTool) {
+            .pointerInput(Unit) {
                 // Mouse pozisyonunu sürekli takip et
                 awaitPointerEventScope {
                     while (true) {
@@ -300,7 +300,7 @@ fun CADCanvas(
                     }
                 }
             }
-            .pointerInput(activeTool) {
+            .pointerInput(Unit) {
                 // Sol tıklama için tap gesture
                 detectTapGestures { offset ->
                     val worldOffset = screenToWorld(offset)
