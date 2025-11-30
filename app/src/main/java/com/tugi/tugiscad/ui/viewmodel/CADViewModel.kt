@@ -52,6 +52,11 @@ class CADViewModel : ViewModel() {
         activeTool.value = tool
     }
 
+    fun setSnapMode(mode: SnapMode) {
+        snapMode.value = mode
+        println("TugisCAD: Snap modu değişti: $mode")
+    }
+
     fun addObject(obj: CADObject) {
         currentProject.value?.let { project ->
             project.objects.add(obj)

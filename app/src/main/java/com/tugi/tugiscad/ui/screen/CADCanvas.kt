@@ -68,6 +68,59 @@ fun CADCanvas(
         }
     }
 
+    // Klavye olaylarını dinle
+    DisposableEffect(Unit) {
+        val keyEventHandler = android.view.View.OnKeyListener { _, keyCode, event ->
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) {
+                when (keyCode) {
+                    // ESC - İşlemi iptal et
+                    android.view.KeyEvent.KEYCODE_ESCAPE -> {
+                        drawingStartPoint = null
+                        drawingPoints = emptyList()
+                        true
+                    }
+                    // F4 - ENDPOINT snap
+                    android.view.KeyEvent.KEYCODE_F4 -> {
+                        viewModel.snapMode.value = com.tugi.tugiscad.ui.viewmodel.SnapMode.ENDPOINT
+                        true
+                    }
+                    // F5 - MIDPOINT snap
+                    android.view.KeyEvent.KEYCODE_F5 -> {
+                        viewModel.snapMode.value = com.tugi.tugiscad.ui.viewmodel.SnapMode.MIDPOINT
+                        true
+                    }
+                    // F6 - INTERSECTION snap
+                    android.view.KeyEvent.KEYCODE_F6 -> {
+                        viewModel.snapMode.value = com.tugi.tugiscad.ui.viewmodel.SnapMode.INTERSECTION
+                        true
+                    }
+                    // F7 - CENTER snap
+                    android.view.KeyEvent.KEYCODE_F7 -> {
+                        viewModel.snapMode.value = com.tugi.tugiscad.ui.viewmodel.SnapMode.CENTER
+                        true
+                    }
+                    // F9 - Grid snap
+                    android.view.KeyEvent.KEYCODE_F9 -> {
+                        viewModel.snapMode.value = com.tugi.tugiscad.ui.viewmodel.SnapMode.GRID
+                        true
+                    }
+                    // + Zoom in
+                    android.view.KeyEvent.KEYCODE_PLUS, android.view.KeyEvent.KEYCODE_EQUALS -> {
+                        viewModel.zoomIn()
+                        true
+                    }
+                    // - Zoom out
+                    android.view.KeyEvent.KEYCODE_MINUS -> {
+                        viewModel.zoomOut()
+                        true
+                    }
+                    else -> false
+                }
+            } else false
+        }
+        onDispose { }
+    }
+
     // Koordinat dönüşüm fonksiyonları
     fun screenToWorld(screenPos: Offset): Offset {
         return Offset(
@@ -141,6 +194,26 @@ fun CADCanvas(
                             closestPoint = Offset(midX.toFloat(), midY.toFloat())
                         }
                     }
+                    // Intersection snap - başka bir çizgiyle kesişim
+                    else if (snapMode == com.tugi.tugiscad.ui.viewmodel.SnapMode.INTERSECTION) {
+                        // Diğer çizgilerle kesişim kontrol et
+                        project?.objects?.forEach { otherObj ->
+                            if (otherObj is CADObject.Line && otherObj.id != obj.id) {
+                                // İki çizginin kesişim noktasını bul
+                                val intersection = findLineIntersection(obj, otherObj)
+                                intersection?.let { intersectPt ->
+                                    val dist = kotlin.math.sqrt(
+                                        ((worldPos.x - intersectPt.x) * (worldPos.x - intersectPt.x) +
+                                         (worldPos.y - intersectPt.y) * (worldPos.y - intersectPt.y)).toDouble()
+                                    )
+                                    if (dist < minDistance) {
+                                        minDistance = dist
+                                        closestPoint = intersectPt
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 is CADObject.Circle -> {
                     // Center snap - dairenin merkezi
@@ -172,6 +245,34 @@ fun CADCanvas(
         }
 
         return closestPoint ?: worldPos
+    }
+
+    // İki çizginin kesişim noktasını bul
+    fun findLineIntersection(line1: CADObject.Line, line2: CADObject.Line): Offset? {
+        val x1 = line1.startPoint.x
+        val y1 = line1.startPoint.y
+        val x2 = line1.endPoint.x
+        val y2 = line1.endPoint.y
+
+        val x3 = line2.startPoint.x
+        val y3 = line2.startPoint.y
+        val x4 = line2.endPoint.x
+        val y4 = line2.endPoint.y
+
+        val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+        if (kotlin.math.abs(denom) < 0.001) return null // Paralel çizgiler
+
+        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+        val u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+        // Kesişim çizgi segment sınırları içinde mi kontrol et
+        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+            val intersectX = x1 + t * (x2 - x1)
+            val intersectY = y1 + t * (y2 - y1)
+            return Offset(intersectX.toFloat(), intersectY.toFloat())
+        }
+
+        return null
     }
 
     Canvas(

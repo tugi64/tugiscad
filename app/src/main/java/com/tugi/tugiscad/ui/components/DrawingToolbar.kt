@@ -264,6 +264,25 @@ fun BottomToolbar(
             // Snap Modu
             SnapModeToggle(viewModel)
 
+            // Snap Modu Göstergesi
+            Text(
+                text = when (viewModel.snapMode.value) {
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.NONE -> "Free"
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.ENDPOINT -> "F4:End"
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.MIDPOINT -> "F5:Mid"
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.INTERSECTION -> "F6:Int"
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.CENTER -> "F7:Cen"
+                    com.tugi.tugiscad.ui.viewmodel.SnapMode.GRID -> "F9:Grid"
+                    else -> "Snap"
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (viewModel.snapMode.value != com.tugi.tugiscad.ui.viewmodel.SnapMode.NONE)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             // Zoom seviyesi
             Text(
                 text = "Zoom: ${String.format(Locale.US, "%.1f", viewModel.zoomLevel.value * 100)}%",
