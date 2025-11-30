@@ -212,13 +212,41 @@ fun BottomToolbar(
         // Sol taraf - Koordinatlar ve ölçek
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            // Koordinatlar - CRS formatına göre
+            val coordText = viewModel.coordinateFormat.value.format(
+                viewModel.currentMouseX.value,
+                viewModel.currentMouseY.value,
+                viewModel.coordinateReferenceSystem.value
+            )
             Text(
-                text = "X: ${String.format(Locale.US, "%.2f", viewModel.currentMouseX.value)}  Y: ${String.format(Locale.US, "%.2f", viewModel.currentMouseY.value)}",
+                text = coordText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // Dikey ayraç
+            Divider(
+                modifier = Modifier
+                    .height(16.dp)
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
+
+            // CRS Bilgisi
+            CoordinateSystemSelector(viewModel)
+
+            // Dikey ayraç
+            Divider(
+                modifier = Modifier
+                    .height(16.dp)
+                    .width(1.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
+
+            // Ölçek
             Text(
                 text = "Ölçek: ${viewModel.currentProject.value?.scale ?: 1000}",
                 style = MaterialTheme.typography.bodySmall,
@@ -353,6 +381,59 @@ private fun SnapModeToggle(viewModel: CADViewModel) {
                     text = { Text(mode.name) },
                     onClick = {
                         viewModel.setSnapMode(mode)
+                        expanded.value = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoordinateSystemSelector(viewModel: CADViewModel) {
+    val expanded = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val crs = viewModel.coordinateReferenceSystem.value
+
+    Box {
+        TextButton(
+            onClick = { expanded.value = true },
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Icon(
+                Icons.Default.Public,
+                contentDescription = "CRS",
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = "${crs.projection.code}",
+                style = MaterialTheme.typography.labelSmall
+            )
+        }
+
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
+            com.tugi.tugiscad.data.model.TurkishCRS.ALL_SYSTEMS.forEach { system ->
+                DropdownMenuItem(
+                    text = {
+                        Column {
+                            Text(
+                                text = system.name,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = "${system.datum} - ${system.projection}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    onClick = {
+                        viewModel.setCoordinateSystem(system)
                         expanded.value = false
                     }
                 )

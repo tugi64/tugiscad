@@ -34,6 +34,14 @@ class CADViewModel : ViewModel() {
     val currentMouseX = mutableStateOf(0.0)
     val currentMouseY = mutableStateOf(0.0)
 
+    // Koordinat Referans Sistemi
+    val coordinateReferenceSystem = mutableStateOf(
+        com.tugi.tugiscad.data.model.TurkishCRS.ITRF96_TM36_39
+    )
+    val coordinateFormat = mutableStateOf(
+        com.tugi.tugiscad.data.model.CoordinateFormat.DECIMAL
+    )
+
     fun addLayer(layer: Layer) {
         currentProject.value?.let { project ->
             project.layers.add(layer)
@@ -55,6 +63,15 @@ class CADViewModel : ViewModel() {
     fun setSnapMode(mode: SnapMode) {
         snapMode.value = mode
         println("TugisCAD: Snap modu değişti: $mode")
+    }
+
+    fun setCoordinateSystem(crs: com.tugi.tugiscad.data.model.CoordinateReferenceSystem) {
+        coordinateReferenceSystem.value = crs
+        println("TugisCAD: Koordinat sistemi: ${crs.toString()}")
+    }
+
+    fun setCoordinateFormat(format: com.tugi.tugiscad.data.model.CoordinateFormat) {
+        coordinateFormat.value = format
     }
 
     fun addObject(obj: CADObject) {
