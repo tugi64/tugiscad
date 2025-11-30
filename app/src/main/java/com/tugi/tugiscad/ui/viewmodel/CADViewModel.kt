@@ -95,9 +95,6 @@ class CADViewModel : ViewModel() {
         showGrid.value = !showGrid.value
     }
 
-    fun setSnapMode(mode: SnapMode) {
-        snapMode.value = mode
-    }
 
     fun createNewProject(name: String, scale: Double, unit: com.tugi.tugiscad.data.model.MeasureUnit) {
         val project = com.tugi.tugiscad.data.model.CADProject(

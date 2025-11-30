@@ -247,33 +247,6 @@ fun CADCanvas(
         return closestPoint ?: worldPos
     }
 
-    // İki çizginin kesişim noktasını bul
-    fun findLineIntersection(line1: CADObject.Line, line2: CADObject.Line): Offset? {
-        val x1 = line1.startPoint.x
-        val y1 = line1.startPoint.y
-        val x2 = line1.endPoint.x
-        val y2 = line1.endPoint.y
-
-        val x3 = line2.startPoint.x
-        val y3 = line2.startPoint.y
-        val x4 = line2.endPoint.x
-        val y4 = line2.endPoint.y
-
-        val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-        if (kotlin.math.abs(denom) < 0.001) return null // Paralel çizgiler
-
-        val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
-        val u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
-
-        // Kesişim çizgi segment sınırları içinde mi kontrol et
-        if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
-            val intersectX = x1 + t * (x2 - x1)
-            val intersectY = y1 + t * (y2 - y1)
-            return Offset(intersectX.toFloat(), intersectY.toFloat())
-        }
-
-        return null
-    }
 
     Canvas(
         modifier = modifier
@@ -855,3 +828,32 @@ private fun finishDrawing(
     }
 }
 
+/**
+ * İki çizginin kesişim noktasını bul
+ */
+private fun findLineIntersection(line1: CADObject.Line, line2: CADObject.Line): Offset? {
+    val x1 = line1.startPoint.x
+    val y1 = line1.startPoint.y
+    val x2 = line1.endPoint.x
+    val y2 = line1.endPoint.y
+
+    val x3 = line2.startPoint.x
+    val y3 = line2.startPoint.y
+    val x4 = line2.endPoint.x
+    val y4 = line2.endPoint.y
+
+    val denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if (kotlin.math.abs(denom) < 0.001) return null // Paralel çizgiler
+
+    val t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    val u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+
+    // Kesişim çizgi segment sınırları içinde mi kontrol et
+    if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+        val intersectX = x1 + t * (x2 - x1)
+        val intersectY = y1 + t * (y2 - y1)
+        return Offset(intersectX.toFloat(), intersectY.toFloat())
+    }
+
+    return null
+}
