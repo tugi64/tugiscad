@@ -311,6 +311,25 @@ fun BottomToolbar(
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
 
+            // Snap Dialog açma butonu
+            var showSnapDialog by remember { mutableStateOf(false) }
+            IconButton(
+                onClick = { showSnapDialog = true }
+            ) {
+                Icon(
+                    Icons.Default.Settings,
+                    contentDescription = "Snap Ayarları",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (showSnapDialog) {
+                SnapSettingsDialog(
+                    viewModel = viewModel,
+                    onDismiss = { showSnapDialog = false }
+                )
+            }
+
             // Zoom seviyesi
             Text(
                 text = "Zoom: ${String.format(Locale.US, "%.1f", viewModel.zoomLevel.value * 100)}%",

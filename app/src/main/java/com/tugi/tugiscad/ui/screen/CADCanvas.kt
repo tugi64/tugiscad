@@ -275,6 +275,27 @@ fun CADCanvas(
                             if (drawingStartPoint != null || drawingPoints.isNotEmpty()) {
                                 currentMousePosition = worldPos
                             }
+
+                            // Mouse scroll wheel ile zoom
+                            if (change.scrollDelta.y != 0f) {
+                                val zoomFactor = if (change.scrollDelta.y > 0) 1.1 else 0.9
+                                val oldZoom = zoom
+                                val newZoom = (oldZoom * zoomFactor).coerceIn(0.1, 10.0)
+
+                                // Mouse pozisyonunu merkez alarak zoom yap
+                                val mouseX = change.position.x
+                                val mouseY = change.position.y
+                                val worldX = (mouseX - panX) / oldZoom.toFloat()
+                                val worldY = (mouseY - panY) / oldZoom.toFloat()
+
+                                viewModel.zoomLevel.value = newZoom
+
+                                // Pan'i ayarla ki mouse altındaki nokta aynı yerde kalsın
+                                viewModel.panOffsetX.value = mouseX - worldX * newZoom.toFloat()
+                                viewModel.panOffsetY.value = mouseY - worldY * newZoom.toFloat()
+
+                                change.consume()
+                            }
                         }
                     }
                 }
