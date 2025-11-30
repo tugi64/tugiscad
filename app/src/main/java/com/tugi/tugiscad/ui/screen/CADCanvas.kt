@@ -271,7 +271,8 @@ fun CADCanvas(
                             viewModel.currentMouseX.value = worldPos.x.toDouble()
                             viewModel.currentMouseY.value = worldPos.y.toDouble()
 
-                            if (drawingStartPoint != null || activeTool == DrawingTool.POLYLINE) {
+                            // Çizim yapılıyorsa mouse pozisyonunu güncelle (rubber band için)
+                            if (drawingStartPoint != null || drawingPoints.isNotEmpty()) {
                                 currentMousePosition = worldPos
                             }
                         }
@@ -334,23 +335,32 @@ fun CADCanvas(
                             }
                         }
                         DrawingTool.POLYLINE -> {
-                            drawingPoints = drawingPoints + snappedOffset
-                            if (drawingPoints.size >= 3) {
+                            if (drawingPoints.size >= 2) {
+                                // En az 2 nokta varsa, ilk noktaya yakın mı kontrol et
                                 val first = drawingPoints.first()
                                 val distance = kotlin.math.sqrt(
                                     ((snappedOffset.x - first.x) * (snappedOffset.x - first.x) +
                                      (snappedOffset.y - first.y) * (snappedOffset.y - first.y)).toDouble()
                                 )
-                                if (distance < 20) {
+
+                                if (distance < 20 / zoom) {
+                                    // İlk noktaya yakın - Kapalı alan oluştur
+                                    // Son noktayı EKLEME, direkt polyline'ı kapat
+                                    println("TugisCAD: POLYLINE kapatılıyor - ${drawingPoints.size} nokta")
                                     finishDrawing(
                                         viewModel = viewModel,
                                         startPoint = null,
-                                        points = drawingPoints,
-                                        currentPoint = snappedOffset
+                                        points = drawingPoints, // Son noktayı ekleme
+                                        currentPoint = first // İlk noktaya dön
                                     )
                                     drawingPoints = emptyList()
+                                    return@detectTapGestures
                                 }
                             }
+
+                            // Normal nokta ekleme
+                            drawingPoints = drawingPoints + snappedOffset
+                            println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size})")
                         }
                         else -> {}
                     }
@@ -469,9 +479,31 @@ fun CADCanvas(
             }
 
             // Mevcut mouse pozisyonunu da ekle
-            currentMousePosition?.let {
-                val currentScreen = worldToScreen(it)
+            currentMousePosition?.let { mousePos ->
+                val currentScreen = worldToScreen(mousePos)
                 path.lineTo(currentScreen.x, currentScreen.y)
+
+                // İlk noktaya yakınsa kapalı alan göster
+                if (drawingPoints.size >= 2) {
+                    val firstPoint = drawingPoints.first()
+                    val distance = kotlin.math.sqrt(
+                        ((mousePos.x - firstPoint.x) * (mousePos.x - firstPoint.x) +
+                         (mousePos.y - firstPoint.y) * (mousePos.y - firstPoint.y)).toDouble()
+                    )
+
+                    if (distance < 20 / zoom) {
+                        // İlk noktaya geri çiz (kapalı alan)
+                        path.lineTo(firstScreen.x, firstScreen.y)
+
+                        // İlk noktada büyük kırmızı daire göster
+                        drawCircle(
+                            color = Color.Green,
+                            radius = 8f,
+                            center = firstScreen,
+                            style = Stroke(width = 3f)
+                        )
+                    }
+                }
             }
 
             drawPath(
@@ -825,16 +857,22 @@ private fun finishDrawing(
             }
             DrawingTool.POLYLINE -> {
                 if (points.size >= 2) {
+                    // currentPoint ilk nokta ile aynıysa kapalı alan
+                    val isClosed = points.isNotEmpty() &&
+                                   currentPoint == points.first()
+
                     val polyline = DrawingHelper.createPolyline(
                         points = points,
-                        isClosed = false,
+                        isClosed = isClosed,
                         layer = layer,
                         lineType = lineType,
                         color = color
                     )
                     viewModel.addObject(polyline)
+                    println("TugisCAD: POLYLINE oluşturuldu - ${points.size} nokta, Kapalı: $isClosed")
                 } else {
                     // Polyline için en az 2 nokta gerekir
+                    println("TugisCAD: POLYLINE - Yetersiz nokta: ${points.size}")
                 }
             }
             else -> {}
