@@ -828,13 +828,17 @@ private fun handleClick(
                         currentPoint = first
                     )
                     onPointsChanged(emptyList())
-                    return
+                    println("TugisCAD: POLYLINE - Kapalı alan oluşturuldu!")
+                } else {
+                    // Normal nokta ekleme (ilk noktaya yakın değil)
+                    onPointsChanged(drawingPoints + snappedOffset)
+                    println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size + 1})")
                 }
+            } else {
+                // İlk 2 nokta - direkt ekle
+                onPointsChanged(drawingPoints + snappedOffset)
+                println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size + 1})")
             }
-
-            // Normal nokta ekleme
-            onPointsChanged(drawingPoints + snappedOffset)
-            println("TugisCAD: POLYLINE - Nokta eklendi: $snappedOffset (Toplam: ${drawingPoints.size + 1})")
         }
         else -> {}
     }
