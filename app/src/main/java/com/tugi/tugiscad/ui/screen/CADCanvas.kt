@@ -271,10 +271,8 @@ fun CADCanvas(
                             viewModel.currentMouseX.value = worldPos.x.toDouble()
                             viewModel.currentMouseY.value = worldPos.y.toDouble()
 
-                            // Çizim yapılıyorsa mouse pozisyonunu güncelle (rubber band için)
-                            if (drawingStartPoint != null || drawingPoints.isNotEmpty()) {
-                                currentMousePosition = worldPos
-                            }
+                            // Mouse pozisyonunu HER ZAMAN güncelle (rubber band için)
+                            currentMousePosition = worldPos
 
                             // Mouse scroll wheel ile zoom
                             if (change.scrollDelta.y != 0f) {
@@ -443,6 +441,61 @@ fun CADCanvas(
                     }
                     else -> {}
                 }
+            }
+        }
+
+        // LINE önizlemesi (Rubber band)
+        if (drawingStartPoint != null && activeTool == DrawingTool.LINE) {
+            currentMousePosition?.let { mousePos ->
+                val startScreen = worldToScreen(drawingStartPoint!!)
+                val endScreen = worldToScreen(mousePos)
+
+                drawLine(
+                    color = Color.Yellow.copy(alpha = 0.7f),
+                    start = startScreen,
+                    end = endScreen,
+                    strokeWidth = 2f
+                )
+            }
+        }
+
+        // RECTANGLE önizlemesi (Rubber band)
+        if (drawingStartPoint != null && activeTool == DrawingTool.RECTANGLE) {
+            currentMousePosition?.let { mousePos ->
+                val startScreen = worldToScreen(drawingStartPoint!!)
+                val endScreen = worldToScreen(mousePos)
+
+                drawRect(
+                    color = Color.Yellow.copy(alpha = 0.7f),
+                    topLeft = Offset(
+                        kotlin.math.min(startScreen.x, endScreen.x),
+                        kotlin.math.min(startScreen.y, endScreen.y)
+                    ),
+                    size = androidx.compose.ui.geometry.Size(
+                        kotlin.math.abs(endScreen.x - startScreen.x),
+                        kotlin.math.abs(endScreen.y - startScreen.y)
+                    ),
+                    style = Stroke(width = 2f)
+                )
+            }
+        }
+
+        // CIRCLE önizlemesi (Rubber band)
+        if (drawingStartPoint != null && activeTool == DrawingTool.CIRCLE) {
+            currentMousePosition?.let { mousePos ->
+                val startScreen = worldToScreen(drawingStartPoint!!)
+                val endScreen = worldToScreen(mousePos)
+
+                val dx = endScreen.x - startScreen.x
+                val dy = endScreen.y - startScreen.y
+                val radius = kotlin.math.sqrt((dx * dx + dy * dy).toDouble()).toFloat()
+
+                drawCircle(
+                    color = Color.Yellow.copy(alpha = 0.7f),
+                    radius = radius,
+                    center = startScreen,
+                    style = Stroke(width = 2f)
+                )
             }
         }
 
