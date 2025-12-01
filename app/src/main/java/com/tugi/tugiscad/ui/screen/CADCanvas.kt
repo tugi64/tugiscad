@@ -299,14 +299,13 @@ fun CADCanvas(
                 }
             }
             .pointerInput(Unit) {
-                // Sol tıklama için - AutoCAD benzeri hızlı tıklama
+                // Sol/Sağ tıklama için - AutoCAD benzeri
                 awaitPointerEventScope {
                     while (true) {
                         // İlk down event'i bekle
                         val down = awaitPointerEvent(PointerEventPass.Main)
                         val downChange = down.changes.firstOrNull() ?: continue
 
-                        // Sadece sol tık (primary button)
                         if (down.changes.any { it.pressed }) {
                             val downPosition = downChange.position
 
@@ -315,28 +314,54 @@ fun CADCanvas(
                             val upChange = up.changes.firstOrNull()
 
                             if (upChange != null && !upChange.pressed) {
-                                // Tıklama tamamlandı!
                                 val clickPosition = upChange.position
 
-                                // Çok az hareket varsa tıklama sayılır (AutoCAD gibi)
+                                // Çok az hareket varsa tıklama sayılır
                                 val dx = clickPosition.x - downPosition.x
                                 val dy = clickPosition.y - downPosition.y
                                 val distance = kotlin.math.sqrt((dx * dx + dy * dy).toDouble())
 
-                                if (distance < 10) { // 10 piksel tolerans
+                                if (distance < 10) {
                                     val worldOffset = screenToWorld(clickPosition)
                                     val snappedOffset = snapToPoint(worldOffset, viewModel.snapMode.value)
 
-                                    handleClick(
-                                        snappedOffset = snappedOffset,
-                                        activeTool = activeTool,
-                                        viewModel = viewModel,
-                                        drawingStartPoint = drawingStartPoint,
-                                        drawingPoints = drawingPoints,
-                                        zoom = zoom,
-                                        onStartPointChanged = { drawingStartPoint = it },
-                                        onPointsChanged = { drawingPoints = it }
-                                    )
+                                    // Sağ tık kontrolü (ikincil buton)
+                                    val isRightClick = downChange.type == androidx.compose.ui.input.pointer.PointerType.Mouse &&
+                                                       down.buttons.isSecondaryPressed
+
+                                    if (isRightClick) {
+                                        // Sağ tık - Çizimi bitir
+                                        println("TugisCAD: SAĞ TIK - Çizim sonlandırılıyor")
+                                        if (activeTool == DrawingTool.LINE && drawingStartPoint != null) {
+                                            // LINE için sağ tık - çizimi bitir
+                                            drawingStartPoint = null
+                                            println("TugisCAD: LINE çizimi sonlandırıldı")
+                                        } else if (activeTool == DrawingTool.POLYLINE && drawingPoints.isNotEmpty()) {
+                                            // POLYLINE için sağ tık - açık polyline olarak bitir
+                                            if (drawingPoints.size >= 2) {
+                                                finishDrawing(
+                                                    viewModel = viewModel,
+                                                    startPoint = null,
+                                                    points = drawingPoints,
+                                                    currentPoint = drawingPoints.last()
+                                                )
+                                            }
+                                            drawingPoints = emptyList()
+                                            println("TugisCAD: POLYLINE açık olarak sonlandırıldı")
+                                        }
+                                    } else {
+                                        // Sol tık - Normal çizim
+                                        handleClick(
+                                            snappedOffset = snappedOffset,
+                                            activeTool = activeTool,
+                                            viewModel = viewModel,
+                                            drawingStartPoint = drawingStartPoint,
+                                            drawingPoints = drawingPoints,
+                                            zoom = zoom,
+                                            onStartPointChanged = { drawingStartPoint = it },
+                                            onPointsChanged = { drawingPoints = it }
+                                        )
+                                    }
 
                                     upChange.consume()
                                 }
@@ -814,15 +839,17 @@ private fun handleClick(
     onStartPointChanged: (Offset?) -> Unit,
     onPointsChanged: (List<Offset>) -> Unit
 ) {
+    println("TugisCAD: handleClick - Tool: $activeTool, Snapped: $snappedOffset, StartPoint: $drawingStartPoint")
+
     when (activeTool) {
         DrawingTool.LINE -> {
             if (drawingStartPoint == null) {
                 // İlk tıklama - başlangıç noktası
                 onStartPointChanged(snappedOffset)
-                println("TugisCAD: LINE - Başlangıç: $snappedOffset")
+                println("TugisCAD: LINE - Başlangıç belirlendi: $snappedOffset")
             } else {
                 // İkinci tıklama - çizgi çiz VE son nokta yeni başlangıç olsun
-                println("TugisCAD: LINE - Segment: $drawingStartPoint -> $snappedOffset")
+                println("TugisCAD: LINE - Segment çiziliyor: $drawingStartPoint -> $snappedOffset")
                 finishDrawing(
                     viewModel = viewModel,
                     startPoint = drawingStartPoint,
@@ -831,7 +858,7 @@ private fun handleClick(
                 )
                 // ÖNEMLİ: Son nokta yeni başlangıç (sürekli çizim için)
                 onStartPointChanged(snappedOffset)
-                println("TugisCAD: LINE - Yeni başlangıç: $snappedOffset")
+                println("TugisCAD: LINE - Yeni başlangıç: $snappedOffset (Sağ tık ile bitir)")
             }
         }
         DrawingTool.RECTANGLE, DrawingTool.CIRCLE, DrawingTool.ARC, DrawingTool.ELLIPSE -> {
